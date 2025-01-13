@@ -1,8 +1,17 @@
 # Remarkable Auto OCR
 
 1. Syncs a remarkable tablet over SSH
-2. Uploads files to [google OCR](/#TODO_link)
-3. Saves in gdrive
+1. Uploads files to [google OCR](/#TODO_link)
+1. Saves in gdrive
+
+## TODO
+
+1. Set up `ruff` ✅
+1. Set up `mdformat` ✅
+1. PoC of running `main.py` as service
+1. How to distribute all the necessary libs from `uv` to service?
+1. Start with remarkable integration
+   - Fetch
 
 ## ChatGPT instructions
 
@@ -93,31 +102,31 @@ Now, let's enable and start the service using `systemd` commands:
    sudo systemctl daemon-reload
    ```
 
-2. Enable the service to start on boot:
+1. Enable the service to start on boot:
 
    ```bash
    sudo systemctl enable my_python_service.service
    ```
 
-3. Start the service:
+1. Start the service:
 
    ```bash
    sudo systemctl start my_python_service.service
    ```
 
-4. Check the status of the service:
+1. Check the status of the service:
 
    ```bash
    sudo systemctl status my_python_service.service
    ```
 
-5. To stop the service:
+1. To stop the service:
 
    ```bash
    sudo systemctl stop my_python_service.service
    ```
 
-6. To restart the service:
+1. To restart the service:
 
    ```bash
    sudo systemctl restart my_python_service.service
@@ -127,7 +136,7 @@ Now, let's enable and start the service using `systemd` commands:
 
 Create or modify a `README.md` file in the project directory with the following setup instructions:
 
-```markdown
+````markdown
 # My Python Service
 
 This is a simple Python service running as a Linux system service using systemd.
@@ -145,9 +154,10 @@ This is a simple Python service running as a Linux system service using systemd.
    ```bash
    uv init my_python_service
    cd my_python_service
-   ```
+````
 
 2. Create a `systemd` service file at `/etc/systemd/system/my_python_service.service`:
+
    ```ini
    [Unit]
    Description=My Python Service
@@ -164,14 +174,16 @@ This is a simple Python service running as a Linux system service using systemd.
    WantedBy=multi-user.target
    ```
 
-3. Register and start the service:
+1. Register and start the service:
+
    ```bash
    sudo systemctl daemon-reload
    sudo systemctl enable my_python_service.service
    sudo systemctl start my_python_service.service
    ```
 
-4. Check the status of the service:
+1. Check the status of the service:
+
    ```bash
    sudo systemctl status my_python_service.service
    ```
@@ -187,15 +199,18 @@ tail -f /var/log/my_python_service.log
 ### Stopping and Restarting the Service
 
 To stop the service:
+
 ```bash
 sudo systemctl stop my_python_service.service
 ```
 
 To restart the service:
+
 ```bash
 sudo systemctl restart my_python_service.service
 ```
-```
+
+````
 
 ### Step 6: Test the Service
 
@@ -203,7 +218,7 @@ After starting the service, check if it's logging properly to the log file `/var
 
 ```bash
 tail -f /var/log/my_python_service.log
-```
+````
 
 This should show messages like "Service is running..." every minute.
 

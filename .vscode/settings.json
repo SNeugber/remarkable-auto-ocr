@@ -1,0 +1,11 @@
+{
+    "emeraldwalk.runonsave": { 
+        "commands": [
+            {
+                // Run whenever any markdown file is saved
+                "match": ".md",
+                "cmd": "uvx mdformat ${fileBasename}"
+            }
+        ]
+    }
+}
