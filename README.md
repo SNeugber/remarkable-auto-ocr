@@ -8,6 +8,7 @@
 
 1. Set up `ruff` ✅
 1. Set up `mdformat` ✅
+1. Set up devcontainer ✅
 1. PoC of running `main.py` as service
 1. How to distribute all the necessary libs from `uv` to service?
    - Use [nuitka](https://github.com/astral-sh/uv/issues/5802#issuecomment-2273058176)
