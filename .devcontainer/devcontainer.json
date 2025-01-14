@@ -9,8 +9,8 @@
 		"dockerfile": "../dev.dockerfile"
 	},
 	"mounts": [
-		"source=${localEnv:HOME}/.ssh,target=/root/.ssh,readonly,type=bind",
-	],
+		"source=${localEnv:HOME}/.ssh,target=/root/.ssh,readonly,type=bind"
+	]
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
