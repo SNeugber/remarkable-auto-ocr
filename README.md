@@ -9,15 +9,15 @@
 1. Set up `ruff` ✅
 1. Set up `mdformat` ✅
 1. Set up devcontainer ✅
-1. PoC of running `main.py` as service
-1. How to distribute all the necessary libs from `uv` to service?
-   - Use [nuitka](https://github.com/astral-sh/uv/issues/5802#issuecomment-2273058176)
 1. Start with remarkable integration
    - Fetch data over ssh
    - Upload to google OCR
    - Merge OCRed text with PDF somehow
    - Upload to gdrive
    - Save SQLite DB file in gdrive with info on synced files
+1. PoC of running `main.py` as service
+1. How to distribute all the necessary libs from `uv` to service?
+   - Use [nuitka](https://github.com/astral-sh/uv/issues/5802#issuecomment-2273058176)
 
 ## ChatGPT instructions
 
