@@ -4,6 +4,22 @@
 1. Uploads files to [google OCR](/#TODO_link)
 1. Saves in gdrive
 
+# Dev Setup
+
+1. Install VSCode
+1. Install devcontainers extension
+1. Launch project in dev container
+1. Run task `init-vscode`
+1. Run app through vscode using the configurations in `launch.json`
+
+## Update list of extensions
+
+Run this command from the project directory inside the dev container with the relevant extensions installed:
+
+```bash
+code --list-extensions | xargs -L 1 echo code --install-extension | tail -n +2 > ./.vscode/install_extensions.sh
+```
+
 ## TODO
 
 1. Set up `ruff` ✅

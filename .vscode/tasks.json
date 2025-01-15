@@ -1,0 +1,16 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+    {
+        "label": "uv-sync",
+        "command": "uv",
+        "args": ["sync"],
+        "type": "shell"
+    },
+    {
+        "label": "init-vscode",
+        "command": "./.vscode/install_extensions.sh",
+        "type": "shell"
+    }
+]
+}
