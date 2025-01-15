@@ -3,6 +3,7 @@ from loguru import logger
 
 logger.add("/var/log/my_python_service.log", level="INFO")
 
+
 def run(db):
     logger.info("Service is running...")
     while True:
@@ -14,10 +15,10 @@ def run(db):
         time.sleep(120)
 
 
-
 def main():
     db = load_db()
     run(db)
+
 
 if __name__ == "__main__":
     main()

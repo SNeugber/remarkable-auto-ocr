@@ -1,6 +1,13 @@
 import pandas as pd
 
+import paramiko
 from loguru import logger
+
+def open_ssh_connection() -> paramiko.SSHClient:
+    ssh_client = paramiko.SSHClient()
+    ssh_client.connect(server, username=username, password=password)
+    stdin, stdout, stderr = ssh_client.exec_command(command)
+
 
 def out_of_sync(file: dict, db: pd.DataFrame) -> bool:
     db_entry = db[db.uuid == file["uuid"]]

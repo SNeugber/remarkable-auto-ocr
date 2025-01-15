@@ -8,6 +8,7 @@ dependencies = [
     "loguru>=0.7.3",
     "mdformat>=0.7.21",
     "pandas>=2.2.3",
+    "paramiko>=3.5.0",
 ]
 
 [dependency-groups]
