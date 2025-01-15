@@ -25,8 +25,11 @@ code --list-extensions | xargs -L 1 echo code --install-extension | tail -n +2 >
 1. Set up `ruff` ✅
 1. Set up `mdformat` ✅
 1. Set up devcontainer ✅
+1. Set up git hooks to run `ruff` and `mdformat`!
 1. Start with remarkable integration
    - Fetch data over ssh
+     - Integrate with Paramiko
+     - How to save data in a DB? Start with CSV? -> Maybe ask ChatGPT again to generate a schema with SQLModel, migrations with alembic and tasks in vscode to run migratoins, etc...
    - Upload to google OCR
    - Merge OCRed text with PDF somehow
    - Upload to gdrive
