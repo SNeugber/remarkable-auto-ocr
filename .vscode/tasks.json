@@ -7,10 +7,5 @@
         "args": ["sync"],
         "type": "shell"
     },
-    {
-        "label": "init-vscode",
-        "command": "./.vscode/install_extensions.sh",
-        "type": "shell"
-    }
 ]
 }

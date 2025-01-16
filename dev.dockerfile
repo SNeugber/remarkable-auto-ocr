@@ -6,4 +6,6 @@ ADD https://astral.sh/uv/install.sh /uv-installer.sh
 
 RUN sh /uv-installer.sh && rm /uv-installer.sh
 
+RUN pip install pre-commit
+
 ENV PATH="/root/.local/bin/:$PATH"
