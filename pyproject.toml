@@ -3,12 +3,13 @@ name = "remarkable-auto-ocr"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 dependencies = [
     "loguru>=0.7.3",
     "mdformat>=0.7.21",
     "pandas>=2.2.3",
     "paramiko>=3.5.0",
+    "sqlalchemy>=2.0.37",
 ]
 
 [dependency-groups]

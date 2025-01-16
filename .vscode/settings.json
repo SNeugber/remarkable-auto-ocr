@@ -7,5 +7,6 @@
                 "cmd": "uvx mdformat ${fileBasename}"
             }
         ]
-    }
+    },
+    "python.terminal.activateEnvironment": true,
 }
