@@ -25,7 +25,7 @@ code --list-extensions | xargs -L 1 echo code --install-extension | tail -n +2 >
 1. Set up `ruff` ✅
 1. Set up `mdformat` ✅
 1. Set up devcontainer ✅
-1. Set up git hooks to run `ruff` and `mdformat`!
+1. Set up git hooks to run `ruff` and `mdformat`! ✅
 1. Start with remarkable integration
    - Fetch data over ssh
      - Integrate with Paramiko
@@ -37,6 +37,12 @@ code --list-extensions | xargs -L 1 echo code --install-extension | tail -n +2 >
 1. PoC of running `main.py` as service
 1. How to distribute all the necessary libs from `uv` to service?
    - Use [nuitka](https://github.com/astral-sh/uv/issues/5802#issuecomment-2273058176)
+1. Config
+1. Instructions
+
+## Setup Instructions
+
+Set up the remarkable for ssh access by following [this guide](https://remarkable.guide/guide/access/ssh.html#setting-up-a-ssh-key)
 
 ## ChatGPT instructions
 
@@ -74,12 +80,14 @@ Create the file `main.py` with the following basic structure:
 import time
 import logging
 
-logging.basicConfig(filename='/var/log/my_python_service.log', level=logging.INFO)
+logging.basicConfig(filename="/var/log/my_python_service.log", level=logging.INFO)
+
 
 def main():
     while True:
         logging.info("Service is running...")
         time.sleep(60)
+
 
 if __name__ == "__main__":
     main()

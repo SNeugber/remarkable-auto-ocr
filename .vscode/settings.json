@@ -3,8 +3,15 @@
         "commands": [
             {
                 // Run whenever any markdown file is saved
-                "match": ".md",
+                "match": "\\.md$",
+                "isAsync": true,
                 "cmd": "uvx mdformat ${fileBasename}"
+            },
+            {
+                // Run whenever any python file is saved
+                "match": "\\.py$",
+                "isAsync": true,
+                "cmd": "uvx ruff format ${fileBasename}"
             }
         ]
     },

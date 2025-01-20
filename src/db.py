@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
-from models import Metadata, Base
+from models import Metadata, Base, RemarkableFile
 
 
 def get_engine() -> Engine:
@@ -14,7 +14,26 @@ def get_engine() -> Engine:
     return engine
 
 
-def parse_files(engine: Engine, files: list[tuple[str, dict]]):
+def out_of_sync_files(
+    files: list[RemarkableFile], engine: Engine
+) -> list[RemarkableFile]:
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    existing = session.query(Metadata).all()
+    to_update = []
+    meta_by_uuid = {meta.uuid: meta for meta in existing}
+    for file in files:
+        if file.type != "DocumentType":
+            continue
+        if (
+            file.uuid not in meta_by_uuid
+            or meta_by_uuid[file.uuid].last_modified < file.last_modified
+        ):
+            to_update.append(file)
+    return to_update
+
+
+def upsert_files(engine: Engine, files: list[tuple[str, dict]]):
     Session = sessionmaker(bind=engine)
     session = Session()
 
