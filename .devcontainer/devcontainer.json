@@ -9,7 +9,8 @@
 		"dockerfile": "../dev.dockerfile"
 	},
 	"mounts": [
-		"source=${localEnv:HOME}/.ssh,target=/root/.ssh,readonly,type=bind"
+		"source=${localEnv:HOME}/.ssh,target=/root/.ssh,readonly,type=bind",
+		"source=${localEnv:HOME}/env.toml,target=/root/env.toml,type=bind"
 	],
 	"customizations": {
 		"vscode": {

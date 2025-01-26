@@ -1,7 +1,9 @@
+from pathlib import Path
 import time
 from loguru import logger
 import db
 import remarkable
+from config import Config
 
 logger.add("/var/log/my_python_service.log", level="INFO")
 
@@ -10,10 +12,11 @@ def run():
     logger.info("Service is running...")
     engine = db.get_engine()
     while True:
-        session = remarkable.open_connection(host="192.168.1.7")
+        session = remarkable.open_connection()
         files = remarkable.get_files(session)
         print(files)
-        _ = db.out_of_sync_files(files, engine)
+        to_update = db.out_of_sync_files(files, engine)
+        print(to_update)
         # files = files_to_process(engine)
         # parsed = parse_files(files)
         # uploaded = upload_to_gdrive(parsed)

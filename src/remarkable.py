@@ -5,18 +5,19 @@ import pandas as pd
 
 import paramiko
 from models import RemarkableFile
+from config import Config
 
 
-def open_connection(
-    host: str,
-    username: str = "root",
-    pkey_file_path: Path = Path("/root/.ssh/id_rsa").resolve().absolute(),
-) -> paramiko.SSHClient:
-    pkey = paramiko.RSAKey.from_private_key_file(pkey_file_path)
+def open_connection() -> paramiko.SSHClient:
+    pk_file = Path(Config.SSHKeyPath)
+    if not pk_file.exists():
+        raise FileNotFoundError(pk_file)
+    loader = paramiko.Ed25519Key if "ed25519" in pk_file.stem.lower() else paramiko.RSAKey
+    pkey = loader.from_private_key_file(pk_file)
     client = paramiko.SSHClient()
     policy = paramiko.AutoAddPolicy()
     client.set_missing_host_key_policy(policy)
-    client.connect(host, username=username, pkey=pkey)
+    client.connect(Config.RemarkableIPAddress, username="root", pkey=pkey)
     return client
 
 
