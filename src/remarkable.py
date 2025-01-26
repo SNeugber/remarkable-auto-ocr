@@ -3,10 +3,9 @@ import json
 from pathlib import Path
 import tempfile
 from zipfile import ZipFile
-import zipfile
 import pandas as pd
-from rmrl import render
-from rmrl.sources import FSSource
+from rmc import rm_to_pdf
+from pypdf import PdfWriter
 
 import paramiko
 from models import RemarkableFile
@@ -20,7 +19,9 @@ def open_connection() -> paramiko.SSHClient:
     pk_file = Path(Config.SSHKeyPath)
     if not pk_file.exists():
         raise FileNotFoundError(pk_file)
-    loader = paramiko.Ed25519Key if "ed25519" in pk_file.stem.lower() else paramiko.RSAKey
+    loader = (
+        paramiko.Ed25519Key if "ed25519" in pk_file.stem.lower() else paramiko.RSAKey
+    )
     pkey = loader.from_private_key_file(pk_file)
     client = paramiko.SSHClient()
     policy = paramiko.AutoAddPolicy()
@@ -40,6 +41,7 @@ def load_file_metadata(
         name=content["visibleName"],
         type=content["type"],
     )
+
 
 def render_pdf(file: RemarkableFile, client: paramiko.SSHClient) -> ZipFile:
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -65,14 +67,26 @@ def render_pdf(file: RemarkableFile, client: paramiko.SSHClient) -> ZipFile:
                 if stat.S_ISDIR(fileattr.st_mode):
                     dirs_to_copy.append(Path(directory) / content_file)
                     continue
-                sftp.get(str(FILES_ROOT / directory / content_file), str(content_dir / content_file))
+                sftp.get(
+                    str(FILES_ROOT / directory / content_file),
+                    str(content_dir / content_file),
+                )
 
-        output = render(str(tmpdir / file.uuid))  # TODO patch the issue here in fork and install from there...
-        return output.read()
+        pages = []
+        with (tmpdir / f"{file.uuid}.content").open("r") as f:
+            dat = json.load(f)
+            pages = dat.get("cPages", {}).get("pages", [])
+        for page in pages:
+            page_path = tmpdir / file.uuid / f"{page['id']}.rm"
+            rm_to_pdf(page_path, tmpdir / f"{page['id']}.pdf")
 
-        
-
-            
+        merger = PdfWriter()
+        for page in pages:
+            merger.append(tmpdir / f"{page['id']}.pdf")
+        merger.write("result.pdf")
+        merger.close()
+        with open("result.pdf", "rb") as f:
+            return f.read()
 
 
 def get_files(
@@ -85,7 +99,9 @@ def get_files(
     meta_files = files_df[files_df.filename.str.endswith(".metadata")]
     files = list(
         meta_files.apply(
-            lambda file: load_file_metadata(sftp, FILES_ROOT / file.filename, file.st_mtime),
+            lambda file: load_file_metadata(
+                sftp, FILES_ROOT / file.filename, file.st_mtime
+            ),
             axis=1,
         )
     )

@@ -103,6 +103,18 @@ wheels = [
 ]
 
 [[package]]
+name = "click"
+version = "8.1.8"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b9/2e/0090cbf739cee7d23781ad4b89a9894a41538e4fcf4c31dcdd705b78eb8b/click-8.1.8.tar.gz", hash = "sha256:ed53c9d8990d83c2a27deae68e4ee337473f6330c040a31d4225c9574d16096a", size = 226593 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7e/d4/7ebdbd03970677812aac39c869717059dbb71a4cfc033ca6e5221787892c/click-8.1.8-py3-none-any.whl", hash = "sha256:63c132bbbed01578a06712a2d1f497bb62d9c1c0d329b7903a866228027263b2", size = 98188 },
+]
+
+[[package]]
 name = "colorama"
 version = "0.4.6"
 source = { registry = "https://pypi.org/simple" }
@@ -457,6 +469,15 @@ wheels = [
 ]
 
 [[package]]
+name = "packaging"
+version = "23.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/fb/2b/9b9c33ffed44ee921d0967086d653047286054117d584f1b1a7c22ceaf7b/packaging-23.2.tar.gz", hash = "sha256:048fb0e9405036518eaaf48a55953c750c11e1a1b68e0dd1a9d62ed0c092cfc5", size = 146714 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ec/1a/610693ac4ee14fcdf2d9bf3c493370e4f2ef7ae2e19217d7a237ff42367d/packaging-23.2-py3-none-any.whl", hash = "sha256:8c491190033a9af7e1d931d0b5dacc2ef47509b34dd0de67ed209b5203fc88c7", size = 53011 },
+]
+
+[[package]]
 name = "pandas"
 version = "2.2.3"
 source = { registry = "https://pypi.org/simple" }
@@ -658,6 +679,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pypdf"
+version = "5.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/49/8b/14ab0db77d1287922e1d3e69cf3dbeee718133e109913b92c6cffe7b1f2e/pypdf-5.2.0.tar.gz", hash = "sha256:7c38e68420f038f2c4998fd9d6717b6db4f6cef1642e9cf384d519c9cf094663", size = 5020162 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3e/6e/9aa158121eb5a6af5537af0bde9e38092a97c40a5a0ecaec7cc9688b2c2e/pypdf-5.2.0-py3-none-any.whl", hash = "sha256:d107962ec45e65e3bd10c1d9242bdbbedaa38193c9e3a6617bd6d996e5747b19", size = 298686 },
+]
+
+[[package]]
 name = "python-dateutil"
 version = "2.9.0.post0"
 source = { registry = "https://pypi.org/simple" }
@@ -689,6 +719,8 @@ dependencies = [
     { name = "mdformat" },
     { name = "pandas" },
     { name = "paramiko" },
+    { name = "pypdf" },
+    { name = "rmc" },
     { name = "rmrl" },
     { name = "setuptools" },
     { name = "sqlalchemy" },
@@ -707,6 +739,8 @@ requires-dist = [
     { name = "mdformat", specifier = ">=0.7.21" },
     { name = "pandas", specifier = ">=2.2.3" },
     { name = "paramiko", specifier = ">=3.5.0" },
+    { name = "pypdf", specifier = ">=5.2.0" },
+    { name = "rmc", specifier = ">=0.2.1" },
     { name = "rmrl", specifier = ">=0.2.1" },
     { name = "setuptools", specifier = ">=75.8.0" },
     { name = "sqlalchemy", specifier = ">=2.0.37" },
@@ -740,6 +774,19 @@ wheels = [
 ]
 
 [[package]]
+name = "rmc"
+version = "0.2.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "click" },
+    { name = "rmscene" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/cf/9d/c5a498ee563151ceb569e4209eb09e2d290728371ebf01fe91997516f6e4/rmc-0.2.1.tar.gz", hash = "sha256:34f03406ae58b26b7e9c66ed00eb2a1368768dc2aaa95eaca518d8f939dc615c", size = 10966 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/91/0c/acb231f2dfb4bba36e08676b7aa6de71321f3e467c052380c3c36433ee26/rmc-0.2.1-py3-none-any.whl", hash = "sha256:814433f7b728ddaea918166795feec245e897aec93f7d14e1d7bf99b3b1593fa", size = 12578 },
+]
+
+[[package]]
 name = "rmrl"
 version = "0.2.1"
 source = { registry = "https://pypi.org/simple" }
@@ -752,6 +799,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/d1/9d/9555822307171519569e0d326dae389244f7d18fe671cba4fcde726aa591/rmrl-0.2.1.tar.gz", hash = "sha256:c532bef4168350e6ab17cf37c6481dc12b6a78e007c073503f082f36215b71c9", size = 365254 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/44/5a/ae44b8b62e07771e6d6ed9cea933895822058a6254a48ab75482a8164883/rmrl-0.2.1-py3-none-any.whl", hash = "sha256:c35b9f20494a6034a16e916d7351575efb3e3f77acabe9094453a7f6013eaa86", size = 519478 },
+]
+
+[[package]]
+name = "rmscene"
+version = "0.6.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "packaging" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/92/27/bb1c99959216af939ade7b5b470d049cfa368a179a2c021153e93a922c5a/rmscene-0.6.1.tar.gz", hash = "sha256:82f7797bdfa407f9ad27245e7333a7c6e81f8da3390a4f9d9d89736643fe163c", size = 22790 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b2/77/4de4d4e0203d83288d33b4e448aafbe9aff6fe4deeb344f28c1cca901b98/rmscene-0.6.1-py3-none-any.whl", hash = "sha256:9cd50ae8eede26e3263d78102db880644d39dcc6a5376d38627c060e47bf9045", size = 25316 },
 ]
 
 [[package]]
