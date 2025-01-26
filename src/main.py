@@ -1,22 +1,24 @@
-from pathlib import Path
 import time
 from loguru import logger
 import db
 import remarkable
-from config import Config
+from doc_parsing import pdf2md
 
-logger.add("/var/log/my_python_service.log", level="INFO")
+logger.add("./logs/debug.log", level="INFO")
 
-
+@logger.catch
 def run():
     logger.info("Service is running...")
     engine = db.get_engine()
     while True:
         session = remarkable.open_connection()
         files = remarkable.get_files(session)
-        print(files)
         to_update = db.out_of_sync_files(files, engine)
-        print(to_update)
+        for file in to_update:
+            pdf = remarkable.render_pdf(file, session)
+            md = pdf2md(pdf)
+            print(len(pdf))
+        # parsed = [pdf2md(doc)]
         # files = files_to_process(engine)
         # parsed = parse_files(files)
         # uploaded = upload_to_gdrive(parsed)
