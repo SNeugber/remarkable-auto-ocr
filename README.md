@@ -9,36 +9,44 @@
 1. Install VSCode
 1. Install devcontainers extension
 1. Launch project in dev container
-1. Run task `init-vscode`
 1. Run app through vscode using the configurations in `launch.json`
-
-## Update list of extensions
-
-Run this command from the project directory inside the dev container with the relevant extensions installed:
-
-```bash
-code --list-extensions | xargs -L 1 echo code --install-extension | tail -n +2 > ./.vscode/install_extensions.sh
-```
 
 ## TODO
 
-1. Set up `ruff` ✅
-1. Set up `mdformat` ✅
-1. Set up devcontainer ✅
-1. Set up git hooks to run `ruff` and `mdformat`! ✅
-1. Start with remarkable integration
-   - Fetch data over ssh
-     - Integrate with Paramiko
-     - How to save data in a DB? Start with CSV? -> Maybe ask ChatGPT again to generate a schema with SQLModel, migrations with alembic and tasks in vscode to run migratoins, etc...
-   - Upload to google OCR
-   - Merge OCRed text with PDF somehow
-   - Upload to gdrive
-   - Save SQLite DB file in gdrive with info on synced files
-1. PoC of running `main.py` as service
-1. How to distribute all the necessary libs from `uv` to service?
-   - Use [nuitka](https://github.com/astral-sh/uv/issues/5802#issuecomment-2273058176)
-1. Config
-1. Instructions
+### Prios
+
+1. [Parse Document](#document-parsing)
+1. [Load file paths](#remarkable-integration)
+1. Whitelist Stuff
+
+### Dev Setup
+
+1. VSCode & ruff & UV seem to not be 100% happy yet
+1. How to run and debug app properly with vscode? Seems to not debug quite right...
+1. Looks like WSL has problems with ExpressVPN :(
+
+### General App
+
+1. Load some sort of configuration file
+1. How to get secrets like google API keys and ssh key for tablet?
+1. Save sqlite DB somewhere as well, e.g. GDrive
+1. Run the whole thing as a service in the background
+   - Use [nuitka](https://github.com/astral-sh/uv/issues/5802#issuecomment-2273058176) to make it distributable
+1. Front-end? Low prio...
+
+### Remarkable Integration
+
+1. Fetch data via ssh/sftp using Paramiko ✅
+1. Need to load file paths for documents via metadata
+1. Provide a whitelist of documents/directories and potentially also specific prompts for each
+
+### Document Parsing
+
+1. Find best model to parse documents into markdown
+
+   - Gemini API
+   - NotebookLLM API available yet?
+   - Run Deepseek R1 locally? -> Waaaay to big :D
 
 ## Setup Instructions
 
