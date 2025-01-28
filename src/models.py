@@ -17,6 +17,12 @@ class Metadata(Base):
 
 
 @dataclass
+class RemarkablePage:
+    data: bytes
+    hash: str
+
+
+@dataclass
 class RemarkableFile:
     uuid: str
     name: str

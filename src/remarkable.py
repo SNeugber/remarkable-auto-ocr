@@ -2,20 +2,23 @@ from datetime import datetime
 import json
 from pathlib import Path
 import tempfile
-from zipfile import ZipFile
+from loguru import logger
 import pandas as pd
 from rmc import rm_to_pdf
 from pypdf import PdfWriter
 
 import paramiko
-from models import RemarkableFile
+from models import RemarkableFile, RemarkablePage
 from config import Config
-import stat
+from contextlib import contextmanager
+from collections.abc import Iterator
+from hashlib import sha256
 
 FILES_ROOT = Path("/home/root/.local/share/remarkable/xochitl/")
 
 
-def open_connection() -> paramiko.SSHClient:
+@contextmanager
+def connect() -> Iterator[paramiko.SSHClient]:
     pk_file = Path(Config.SSHKeyPath)
     if not pk_file.exists():
         raise FileNotFoundError(pk_file)
@@ -27,66 +30,10 @@ def open_connection() -> paramiko.SSHClient:
     policy = paramiko.AutoAddPolicy()
     client.set_missing_host_key_policy(policy)
     client.connect(Config.RemarkableIPAddress, username="root", pkey=pkey)
-    return client
-
-
-def load_file_metadata(
-    sftp: paramiko.SSHClient, file_path: Path, last_modified: int
-) -> RemarkableFile:
-    content = json.loads(sftp.open(str(file_path)).read())
-    return RemarkableFile(
-        uuid=file_path.stem,
-        last_modified=datetime.fromtimestamp(last_modified),
-        parent_uuid=content["parent"],
-        name=content["visibleName"],
-        type=content["type"],
-    )
-
-
-def render_pdf(file: RemarkableFile, client: paramiko.SSHClient) -> ZipFile:
-    with tempfile.TemporaryDirectory() as tmpdir:
-        tmpdir = Path(tmpdir)
-
-        sftp = client.open_sftp()
-        meta_files = [f for f in sftp.listdir(str(FILES_ROOT)) if file.uuid in f]
-        dirs_to_copy = []
-        for meta_file in meta_files:
-            fileattr = sftp.lstat(str(FILES_ROOT / meta_file))
-            if stat.S_ISDIR(fileattr.st_mode):
-                dirs_to_copy.append(meta_file)
-                continue
-            sftp.get(str(FILES_ROOT / meta_file), str(tmpdir / meta_file))
-
-        while len(dirs_to_copy):
-            directory = dirs_to_copy.pop(0)
-            content_files = sftp.listdir(str(FILES_ROOT / directory))
-            content_dir = tmpdir / directory
-            content_dir.mkdir(parents=True)
-            for content_file in content_files:
-                fileattr = sftp.lstat(str(FILES_ROOT / directory / content_file))
-                if stat.S_ISDIR(fileattr.st_mode):
-                    dirs_to_copy.append(Path(directory) / content_file)
-                    continue
-                sftp.get(
-                    str(FILES_ROOT / directory / content_file),
-                    str(content_dir / content_file),
-                )
-
-        pages = []
-        with (tmpdir / f"{file.uuid}.content").open("r") as f:
-            dat = json.load(f)
-            pages = dat.get("cPages", {}).get("pages", [])
-        for page in pages:
-            page_path = tmpdir / file.uuid / f"{page['id']}.rm"
-            rm_to_pdf(page_path, tmpdir / f"{page['id']}.pdf")
-
-        merger = PdfWriter()
-        for page in pages:
-            merger.append(tmpdir / f"{page['id']}.pdf")
-        merger.write("result.pdf")
-        merger.close()
-        with open("result.pdf", "rb") as f:
-            return f.read()
+    try:
+        yield client
+    finally:
+        client.close()
 
 
 def get_files(
@@ -99,10 +46,71 @@ def get_files(
     meta_files = files_df[files_df.filename.str.endswith(".metadata")]
     files = list(
         meta_files.apply(
-            lambda file: load_file_metadata(
+            lambda file: load_metadata_file(
                 sftp, FILES_ROOT / file.filename, file.st_mtime
             ),
             axis=1,
         )
     )
+    sftp.close()
     return files
+
+
+def load_metadata_file(
+    sftp: paramiko.SSHClient, metadata_file: Path, last_modified: int
+) -> RemarkableFile:
+    if metadata_file.suffix != ".metadata":
+        raise ValueError("Use this function to load '.metadata' files")
+    meta = json.loads(sftp.open(str(metadata_file)).read())
+    return RemarkableFile(
+        uuid=metadata_file.stem,
+        last_modified=datetime.fromtimestamp(last_modified),
+        parent_uuid=meta["parent"],
+        name=meta["visibleName"],
+        type=meta["type"],
+    )
+
+
+def pages_to_pdfs(
+    client: paramiko.SSHClient, metadata_file: RemarkableFile
+) -> list[RemarkablePage]:
+    sftp = client.open_sftp()
+    try:
+        content_file = FILES_ROOT / (metadata_file.uuid + ".content")
+        content = json.loads(sftp.open(str(content_file)).read())
+    except IOError as e:
+        logger.info(f"No content file for {metadata_file.uuid}.\n{e}")
+        sftp.close()
+        return []
+
+    pages = content.get("cPages", {}).get("pages", [])
+    page_paths = [
+        FILES_ROOT / metadata_file.uuid / f"{page['id']}.rm" for page in pages
+    ]
+
+    page_data = []
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmpdir = Path(tmpdir)
+        for page_path in page_paths:
+            sftp.get(str(page_path), str(tmpdir / page_path.name))
+            pdf_path = tmpdir / page_path.with_suffix(".pdf").name
+            rm_to_pdf(tmpdir / page_path.name, pdf_path)
+            with open(pdf_path, "rb") as f:
+                data = f.read()
+                page_data.append(
+                    RemarkablePage(data=f.read(), hash=sha256(data).hexdigest())
+                )
+    sftp.close()
+    return page_data
+
+
+def merge_pdfs(pages: list[RemarkablePage]) -> bytes:
+    writer = PdfWriter()
+    for page in pages:
+        writer.append(page.data)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        pdf_path = Path(tmpdir) / "result.pdf"
+        writer.write(pdf_path)
+        writer.close()
+        with open(pdf_path, "rb") as f:
+            return f.read()
