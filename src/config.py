@@ -8,6 +8,7 @@ class _Config:
     GoogleAPIKey: str
     RemarkableIPAddress: str
     SSHKeyPath: str
+    CheckInterval: int = 120
     GitRepoPath: Path | None = None
     GDriveFolderPath: Path | None = None
 

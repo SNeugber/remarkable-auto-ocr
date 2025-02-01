@@ -18,7 +18,7 @@ FILES_ROOT = Path("/home/root/.local/share/remarkable/xochitl/")
 
 
 @contextmanager
-def connect() -> Iterator[paramiko.SSHClient]:
+def connect(retries: int = 5) -> Iterator[paramiko.SSHClient | None]:
     pk_file = Path(Config.SSHKeyPath)
     if not pk_file.exists():
         raise FileNotFoundError(pk_file)
@@ -29,9 +29,19 @@ def connect() -> Iterator[paramiko.SSHClient]:
     client = paramiko.SSHClient()
     policy = paramiko.AutoAddPolicy()
     client.set_missing_host_key_policy(policy)
-    client.connect(Config.RemarkableIPAddress, username="root", pkey=pkey)
+    connected = False
+    for _ in range(retries):
+        try:
+            client.connect(
+                Config.RemarkableIPAddress, username="root", pkey=pkey, timeout=5
+            )
+            connected = True
+            break
+        except TimeoutError:
+            continue
+
     try:
-        yield client
+        yield client if connected else None
     finally:
         client.close()
 
@@ -92,7 +102,11 @@ def render_pages(
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
         for i, page_path in enumerate(page_paths):
-            sftp.get(str(page_path), str(tmpdir / page_path.name))
+            try:
+                sftp.get(str(page_path), str(tmpdir / page_path.name))
+            except FileNotFoundError:
+                logger.warning(f"Page does not exist {page_path}.")
+                continue
             pdf_path = tmpdir / page_path.with_suffix(".pdf").name
             rm_to_pdf(tmpdir / page_path.name, pdf_path)
             with open(pdf_path, "rb") as f:
