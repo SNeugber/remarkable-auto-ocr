@@ -30,7 +30,7 @@ def run():
         failed = {page for page, md in md_files.items() if md is None}
         for page in failed:
             logger.error(f"Failed to convert {page.uuid} to markdown.")
-        md_files = {page for page, md in md_files.items() if md is not None}
+            del md_files[page]
         saved = fs.save(files, md_files)
         db.mark_as_synced(saved, engine)
         time.sleep(Config.CheckInterval)

@@ -740,7 +740,7 @@ requires-dist = [
     { name = "pandas", specifier = ">=2.2.3" },
     { name = "paramiko", specifier = ">=3.5.0" },
     { name = "pypdf", specifier = ">=5.2.0" },
-    { name = "rmc", specifier = ">=0.2.1" },
+    { name = "rmc", git = "https://github.com/SNeugber/rmc" },
     { name = "rmrl", specifier = ">=0.2.1" },
     { name = "setuptools", specifier = ">=75.8.0" },
     { name = "sqlalchemy", specifier = ">=2.0.37" },
@@ -775,15 +775,11 @@ wheels = [
 
 [[package]]
 name = "rmc"
-version = "0.2.1"
-source = { registry = "https://pypi.org/simple" }
+version = "0.2.1.dev0"
+source = { git = "https://github.com/SNeugber/rmc#1679f1516cee53dd9b061e98efc837150a2fa39b" }
 dependencies = [
     { name = "click" },
     { name = "rmscene" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/cf/9d/c5a498ee563151ceb569e4209eb09e2d290728371ebf01fe91997516f6e4/rmc-0.2.1.tar.gz", hash = "sha256:34f03406ae58b26b7e9c66ed00eb2a1368768dc2aaa95eaca518d8f939dc615c", size = 10966 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/91/0c/acb231f2dfb4bba36e08676b7aa6de71321f3e467c052380c3c36433ee26/rmc-0.2.1-py3-none-any.whl", hash = "sha256:814433f7b728ddaea918166795feec245e897aec93f7d14e1d7bf99b3b1593fa", size = 12578 },
 ]
 
 [[package]]

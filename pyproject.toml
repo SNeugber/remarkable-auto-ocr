@@ -12,7 +12,7 @@ dependencies = [
     "pandas>=2.2.3",
     "paramiko>=3.5.0",
     "pypdf>=5.2.0",
-    "rmc>=0.2.1",
+    "rmc",
     "rmrl>=0.2.1",
     "setuptools>=75.8.0",
     "sqlalchemy>=2.0.37",
@@ -22,3 +22,6 @@ dependencies = [
 dev = [
     "ruff>=0.9.1",
 ]
+
+[tool.uv.sources]
+rmc = { git = "https://github.com/SNeugber/rmc" }

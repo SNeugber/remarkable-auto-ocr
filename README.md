@@ -17,9 +17,10 @@
 
 ### Prios
 
-1. [Parse Document](#document-parsing)
-1. [Load file paths](#remarkable-integration)
-1. Whitelist Stuff
+1. Whitelist/blacklist + custom prompts
+1. Add files to git repo & commit
+1. Add files to gdrive folder
+1. Tests
 
 ### Dev Setup
 
