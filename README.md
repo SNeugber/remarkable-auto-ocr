@@ -8,6 +8,8 @@
 
 1. Install VSCode
 1. Install devcontainers extension
+1. Ensure `~/.ssh` exists
+1. Ensure `~/env.toml` exists
 1. Launch project in dev container
 1. Run app through vscode using the configurations in `launch.json`
 
@@ -21,7 +23,9 @@
 
 ### Dev Setup
 
+1. Create VSCode task to create `~/.env.toml`
 1. VSCode & ruff & UV seem to not be 100% happy yet
+   - The whole `launch.json` setup doesn't seem to work properly with the debugger yet...
 1. How to run and debug app properly with vscode? Seems to not debug quite right...
 1. Looks like WSL has problems with ExpressVPN :(
 
