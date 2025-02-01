@@ -1,9 +1,9 @@
+from collections.abc import Iterable
 from pathlib import Path
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
-from datetime import datetime
-from models import Metadata, Base, RemarkableFile
+from models import Metadata, Base, Page, RemarkableFile, RemarkablePage
 
 
 def get_engine() -> Engine:
@@ -33,20 +33,34 @@ def out_of_sync_files(
     return to_update
 
 
-def upsert_files(engine: Engine, files: list[tuple[str, dict]]):
+def out_of_sync_pages(
+    pages: Iterable[RemarkablePage], engine: Engine
+) -> list[RemarkablePage]:
+    page_ids = [page.uuid for page in pages]
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    db_pages = session.query(Page).filter(Page.uuid.in_(page_ids)).all()
+    to_update = []
+    for page in pages:
+        db_page = next((p for p in db_pages if p.uuid == page.uuid), None)
+        if db_page is None or db_page.hash != page.hash:
+            to_update.append(page)
+    return to_update
+
+
+def mark_as_synced(saved: dict[RemarkableFile, list[RemarkablePage]], engine: Engine):
     Session = sessionmaker(bind=engine)
     session = Session()
 
-    for file_name, file_contents in files:
+    for file, pages in saved.items():
         metadata = Metadata(
-            id=file_name,
-            created_time=datetime.fromtimestamp(file_contents["createdTime"]),
-            last_modified=datetime.fromtimestamp(file_contents["lastModified"]),
-            parent_id=file_contents["parent"],
-            type=file_contents["type"],
-            visible_name=file_contents["visibleName"],
+            uuid=file.uuid,
+            visible_name=file.name,
+            last_modified=file.last_modified,
+            parent_uuid=file.parent_uuid,
+            type=file.type,
         )
+        metadata.pages.extend([Page(uuid=page.uuid, hash=page.hash) for page in pages])
         session.add(metadata)
-
     session.commit()
     session.close()

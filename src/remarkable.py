@@ -71,7 +71,7 @@ def load_metadata_file(
     )
 
 
-def pages_to_pdfs(
+def render_pages(
     client: paramiko.SSHClient, metadata_file: RemarkableFile
 ) -> list[RemarkablePage]:
     sftp = client.open_sftp()
@@ -91,14 +91,20 @@ def pages_to_pdfs(
     page_data = []
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
-        for page_path in page_paths:
+        for i, page_path in enumerate(page_paths):
             sftp.get(str(page_path), str(tmpdir / page_path.name))
             pdf_path = tmpdir / page_path.with_suffix(".pdf").name
             rm_to_pdf(tmpdir / page_path.name, pdf_path)
             with open(pdf_path, "rb") as f:
                 data = f.read()
                 page_data.append(
-                    RemarkablePage(data=f.read(), hash=sha256(data).hexdigest())
+                    RemarkablePage(
+                        page_idx=i,
+                        parent_uuid=metadata_file.uuid,
+                        uuid=page_path.stem,
+                        data=data,
+                        hash=sha256(data).hexdigest(),
+                    )
                 )
     sftp.close()
     return page_data

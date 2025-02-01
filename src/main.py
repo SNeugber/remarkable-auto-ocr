@@ -1,8 +1,10 @@
+import itertools
 import time
 from loguru import logger
 import db
 import remarkable
 import doc_parsing as dp
+import file_sync as fs
 
 logger.add("./logs/debug.log", level="INFO")
 
@@ -14,25 +16,14 @@ def run():
     while True:
         with remarkable.connect() as session:
             files = remarkable.get_files(session)
-            documents = [file for file in files if file.type == "Document"]
-            files_to_update = db.out_of_sync_files(documents, engine)
-            pdfs = {
-                file.uuid: remarkable.pages_to_pdfs(session, file)
-                for file in files_to_update
-            }
+            files_to_update = db.out_of_sync_files(files, engine)
+            pages = [remarkable.render_pages(session, file) for file in files_to_update]
+            pages = list(itertools.chain.from_iterable(pages))[:2]
 
-        pdfs_to_render = db.out_of_sync_pages(pdfs, engine)
-        md_files = {
-            uuid: [dp.pdf2md(pdf) for pdf in pdfs]
-            for uuid, pdfs in pdfs_to_render.items()
-        }
-        # todo: save somewhere...
-        db.mark_rendered(files_to_update, pdfs, md_files)
-        # parsed = [pdf2md(doc)]
-        # files = files_to_process(engine)
-        # parsed = parse_files(files)
-        # uploaded = upload_to_gdrive(parsed)
-        # mark_files_parsed(db, uploaded)
+        pages_to_render = db.out_of_sync_pages(pages, engine)
+        md_files = {page: dp.pdf2md(page.data) for page in pages_to_render}
+        saved = fs.save(files, md_files)
+        db.mark_as_synced(saved, engine)
         time.sleep(120)
 
 
