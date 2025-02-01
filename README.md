@@ -20,6 +20,7 @@
 1. Whitelist/blacklist + custom prompts
 1. Add files to git repo & commit
 1. Add files to gdrive folder
+1. Run as service in the background
 1. Tests
 
 ### Dev Setup
