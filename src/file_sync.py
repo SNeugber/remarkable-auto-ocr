@@ -2,9 +2,12 @@ from collections import defaultdict
 from io import BytesIO
 from pathlib import Path
 import re
+import shutil
+import subprocess
 from models import RemarkableFile, RemarkablePage
 from config import Config
 from pypdf import PdfWriter
+from loguru import logger
 
 PAGE_SEPARATOR = re.compile(r"^## Page \d+ - \[[0-9a-f\-]+\]$")
 
@@ -13,10 +16,10 @@ def save(
     all_pages: list[RemarkablePage],
     rendered_pages: dict[RemarkablePage, str],
 ) -> dict[RemarkableFile, list[RemarkablePage]]:
-    saved_md_files = _save_mds_to_disk(rendered_pages)
+    _save_mds_to_disk(rendered_pages)
     saved_pdf_files = _save_pdfs_to_disk(all_pages)
     if Config.git_repo_path:
-        _sync_with_subrepo(saved_md_files)
+        _sync_with_subrepo()
     if Config.gdrive_folder_path:
         _copy_to_gdrive_folder(saved_pdf_files)
     return saved_pdf_files
@@ -116,7 +119,43 @@ def _save_combined_pdf(pdf_path: Path, pages: list[RemarkablePage]) -> None:
 
 
 def _sync_with_subrepo():
-    pass
+    base_dir = Path(Config.render_path) / "md"
+    shutil.copytree(base_dir, Path(Config.git_repo_path) / "documents")
+    _save_markdown_repo_readme_file()
+    try:
+        subprocess.run(["git", "add", "."], cwd=Config.git_repo_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-m", "Update files"],
+            cwd=Config.git_repo_path,
+            check=True,
+        )
+        subprocess.run(["git", "push"], cwd=Config.git_repo_path, check=True)
+    except subprocess.CalledProcessError:
+        logger.error("Unable to sync files with with subrepo: {e}")
+
+
+def _save_markdown_repo_readme_file():
+    readme_path = [
+        p for p in Path(Config.git_repo_path).glob("*.md") if p.stem.lower() == "readme"
+    ]
+    DOCS_HEADER = "\n\n## Documents\n\n"
+    if not readme_path:
+        readme_path = Path(Config.git_repo_path) / "README.md"
+        readme = "# Markdown Documents from Remarkable"
+    else:
+        readme_path = readme_path[0]
+        readme = readme_path.read_text()
+        readme = readme.split(DOCS_HEADER)[0]
+
+    # Taken from: https://stackoverflow.com/a/35889620
+    doc_tree = subprocess.check_output(
+        [
+            "tree -tf --noreport -I '*~' --charset ascii $1 | sed -e 's/| \+/  /g' -e 's/[|`]-\+/ */g' -e 's:\(* \)\(\(.*/\)\([^/]\+\)\):\1[\4](\2):g'"
+        ]
+    ).split("\n")[1:]
+    doc_tree = "\n".join(doc_tree)
+    combined = f"{readme}{DOCS_HEADER}{doc_tree}"
+    readme_path.write_text(combined)
 
 
 def _copy_to_gdrive_folder():
