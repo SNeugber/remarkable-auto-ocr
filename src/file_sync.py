@@ -8,6 +8,7 @@ from models import RemarkableFile, RemarkablePage
 from config import Config
 from pypdf import PdfWriter
 from loguru import logger
+from urllib.request import pathname2url
 
 PAGE_SEPARATOR = re.compile(r"^## Page \d+ - \[[0-9a-f\-]+\]$")
 
@@ -132,8 +133,8 @@ def _sync_with_subrepo():
             check=True,
         )
         subprocess.run(["git", "push"], cwd=Config.git_repo_path, check=True)
-    except subprocess.CalledProcessError:
-        logger.error("Unable to sync files with with subrepo: {e}")
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Unable to sync files with with subrepo: {e}")
 
 
 def _save_markdown_repo_readme_file():
@@ -166,7 +167,7 @@ def _dir_to_md_tree(root_path: Path, path: Path, prefix="  "):
     files = [path for path in paths if path.is_file()]
     files.sort(key=lambda f: f.name)
     lines = [
-        f"{prefix}{item_prefix}[{file.name}]({file.relative_to(root_path)})"
+        f"{prefix}{item_prefix}[{file.name}]({pathname2url(file.relative_to(root_path))})"
         for file in files
     ]
 

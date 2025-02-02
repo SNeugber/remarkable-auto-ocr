@@ -19,7 +19,9 @@ def out_of_sync_files(
 ) -> list[RemarkableFile]:
     Session = sessionmaker(bind=engine)
     session = Session()
-    existing = session.query(Metadata).all()
+    existing = (
+        session.query(Metadata).filter(Metadata.uuid.in_([f.uuid for f in files])).all()
+    )
     to_update = []
     meta_by_uuid = {meta.uuid: meta for meta in existing}
     for file in files:
@@ -52,15 +54,32 @@ def mark_as_synced(saved: dict[RemarkableFile, list[RemarkablePage]], engine: En
     Session = sessionmaker(bind=engine)
     session = Session()
 
+    file_uuids = [file.uuid for file in saved.keys()]
+    page_uuids = [page.uuid for pages in saved.values() for page in pages]
+    existing_files = session.query(Metadata).filter(Metadata.uuid.in_(file_uuids)).all()
+    existing_files = {f.uuid: f for f in existing_files}
+    existing_pages = session.query(Page).filter(Page.uuid.in_(page_uuids)).all()
+    existing_pages = {p.uuid: p for p in existing_pages}
+
     for file, pages in saved.items():
-        metadata = Metadata(
-            uuid=file.uuid,
-            visible_name=file.name,
-            last_modified=file.last_modified,
-            parent_uuid=file.parent_uuid,
-            type=file.type,
-        )
-        metadata.pages.extend([Page(uuid=page.uuid, hash=page.hash) for page in pages])
-        session.add(metadata)
+        if file.uuid in existing_files:
+            metadata = existing_files[file.uuid]
+        else:
+            metadata = Metadata(uuid=file.uuid)
+        metadata.visible_name = file.name
+        metadata.last_modified = file.last_modified
+        metadata.parent_uuid = file.parent_uuid
+        metadata.type = file.type
+        new_pages = []
+        for page in pages:
+            if page.uuid in existing_pages:
+                orm_page = existing_pages[page.uuid]
+                orm_page.hash = page.hash
+            else:
+                new_pages.append(Page(uuid=page.uuid, hash=page.hash))
+        if new_pages:
+            metadata.pages.extend(new_pages)
+        if file.uuid not in existing_files:
+            session.add(metadata)
     session.commit()
     session.close()

@@ -15,16 +15,22 @@ logger.add("./logs/debug.log", level="INFO")
 def run():
     logger.info("Service is running...")
     engine = db.get_engine()
+    first = True
     while True:
+        if first:
+            first = False
+        else:
+            time.sleep(Config.check_interval)
         with remarkable.connect() as session:
             if session is None:
                 logger.warning("Could not connect to Remarkable.")
-                time.sleep(Config.check_interval)
                 continue
             files = remarkable.get_files(session)
             file_configs = fpc.get_configs_for_files(files)
             files_to_process = list(file_configs.keys())
-            files_to_update = db.out_of_sync_files(files_to_process, engine)
+            files_to_update = db.out_of_sync_files(files_to_process, engine)[:1]
+            if not files_to_update:
+                continue
             pages = [remarkable.render_pages(session, file) for file in files_to_update]
 
         all_pages = list(itertools.chain.from_iterable(pages))
@@ -37,7 +43,6 @@ def run():
             if not any([p for p in pages if p in failed])
         }
         db.mark_as_synced(saved, engine)
-        time.sleep(Config.check_interval)
 
 
 def main():
