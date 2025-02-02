@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import datetime
+from pathlib import Path
 from sqlalchemy import Column, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import ForeignKey
@@ -45,3 +46,4 @@ class RemarkableFile:
     type: str
     parent_uuid: str
     last_modified: datetime.date
+    path: Path

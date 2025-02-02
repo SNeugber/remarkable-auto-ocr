@@ -1,3 +1,4 @@
+from collections import namedtuple
 from datetime import datetime
 import json
 from pathlib import Path
@@ -15,6 +16,7 @@ from collections.abc import Iterator
 from hashlib import sha256
 
 FILES_ROOT = Path("/home/root/.local/share/remarkable/xochitl/")
+TmpMetadata = namedtuple("Metadata", ["filename", "st_mtime"])
 
 
 @contextmanager
@@ -54,31 +56,52 @@ def get_files(
         [attr.__dict__ for attr in sftp.listdir_attr(str(FILES_ROOT))]
     )
     meta_files = files_df[files_df.filename.str.endswith(".metadata")]
-    files = list(
-        meta_files.apply(
-            lambda file: load_metadata_file(
-                sftp, FILES_ROOT / file.filename, file.st_mtime
-            ),
-            axis=1,
-        )
-    )
+    meta_files = [
+        TmpMetadata(*row) for row in meta_files[["filename", "st_mtime"]].values
+    ]
+    files = _load_metadata_files(sftp, meta_files)
     sftp.close()
     return files
 
 
-def load_metadata_file(
-    sftp: paramiko.SSHClient, metadata_file: Path, last_modified: int
+def _load_metadata_files(
+    sftp: paramiko.SSHClient, metadata_files: list[TmpMetadata]
 ) -> RemarkableFile:
-    if metadata_file.suffix != ".metadata":
-        raise ValueError("Use this function to load '.metadata' files")
-    meta = json.loads(sftp.open(str(metadata_file)).read())
-    return RemarkableFile(
-        uuid=metadata_file.stem,
-        last_modified=datetime.fromtimestamp(last_modified),
-        parent_uuid=meta["parent"],
-        name=meta["visibleName"],
-        type=meta["type"],
-    )
+    data = {
+        Path(file.filename).stem: {
+            **json.loads(sftp.open(str(FILES_ROOT / file.filename)).read()),
+            "st_mtime": file.st_mtime,
+        }
+        for file in metadata_files
+    }
+    paths = _load_file_paths(data)
+
+    return [
+        RemarkableFile(
+            uuid=uuid,
+            last_modified=datetime.fromtimestamp(meta["st_mtime"]),
+            parent_uuid=meta["parent"],
+            name=meta["visibleName"],
+            type=meta["type"],
+            path=paths[uuid],
+        )
+        for uuid, meta in data.items()
+    ]
+
+
+def _load_file_paths(
+    files: dict[str, dict],
+) -> dict[str, Path]:
+    paths = {}
+    for uuid, meta in files.items():
+        path = [meta["visibleName"]]
+        parent_uuid = meta["parent"]
+        parent = files.get(parent_uuid)
+        while parent:
+            path.append(parent["visibleName"])
+            parent = files.get(parent["parent"])
+        paths[uuid] = Path("/".join(reversed(path)))
+    return paths
 
 
 def render_pages(
