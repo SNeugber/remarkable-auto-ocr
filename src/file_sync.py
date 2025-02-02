@@ -167,7 +167,7 @@ def _dir_to_md_tree(root_path: Path, path: Path, prefix="  "):
     files = [path for path in paths if path.is_file()]
     files.sort(key=lambda f: f.name)
     lines = [
-        f"{prefix}{item_prefix}[{file.name}]({pathname2url(file.relative_to(root_path))})"
+        f"{prefix}{item_prefix}[{file.name}]({pathname2url(str(file.relative_to(root_path)))})"
         for file in files
     ]
 

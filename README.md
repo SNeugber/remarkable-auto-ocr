@@ -99,8 +99,7 @@ Do not include any text other than the raw markdown in the output.
 1. Somehow overlay annotated pdfs with their original pdf...
 1. Better place for user config
 1. Try to fetch IP automatically, might need to run this outside of docker
-1. Add files to git repo & commit
-1. Add files to gdrive folder
+1. Add files to gdrive folder, see [here](https://askubuntu.com/a/1336612)
 1. Build & deploy as service in the background
 1. Create relases by building it in CI
 1. Tests
