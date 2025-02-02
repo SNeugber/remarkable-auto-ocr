@@ -120,7 +120,9 @@ def _save_combined_pdf(pdf_path: Path, pages: list[RemarkablePage]) -> None:
 
 def _sync_with_subrepo():
     base_dir = Path(Config.render_path) / "md"
-    shutil.copytree(base_dir, Path(Config.git_repo_path) / "documents")
+    shutil.copytree(
+        base_dir, Path(Config.git_repo_path) / "documents", dirs_exist_ok=True
+    )
     _save_markdown_repo_readme_file()
     try:
         subprocess.run(["git", "add", "."], cwd=Config.git_repo_path, check=True)
