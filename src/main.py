@@ -23,14 +23,19 @@ def run():
                 continue
             files = remarkable.get_files(session)
             file_configs = fpc.get_configs_for_files(files)
-            files_to_process = list(file_configs.keys())[:2]
-            files_to_update = db.out_of_sync_files(files_to_process, engine)
+            files_to_process = list(file_configs.keys())
+            files_to_update = db.out_of_sync_files(files_to_process, engine)[:1]
             pages = [remarkable.render_pages(session, file) for file in files_to_update]
 
-        pages = list(itertools.chain.from_iterable(pages))
-        pages = db.out_of_sync_pages(pages, engine)
-        rendered = dp.pages_to_md(pages, file_configs)
-        saved = fs.save(rendered)
+        all_pages = list(itertools.chain.from_iterable(pages))
+        out_of_sync = db.out_of_sync_pages(all_pages, engine)
+        rendered, failed = dp.pages_to_md(out_of_sync, file_configs)
+        saved = fs.save(all_pages, rendered)
+        saved = {
+            file: pages
+            for file, pages in saved.items()
+            if not any([p for p in pages if p in failed])
+        }
         db.mark_as_synced(saved, engine)
         time.sleep(Config.check_interval)
 

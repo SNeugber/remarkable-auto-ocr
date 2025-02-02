@@ -8,23 +8,29 @@ from models import RemarkableFile, RemarkablePage
 
 def pages_to_md(
     pages: list[RemarkablePage], file_configs: dict[RemarkableFile, ProcessingConfig]
-) -> dict[RemarkablePage, str]:
+) -> tuple[dict[RemarkablePage, str], set[RemarkablePage]]:
     rendered = {}
-    failed: list[RemarkablePage] = []
+    failed: set[RemarkablePage] = set()
     for page in pages:
         if file_configs[page.parent].pdf_only:
-            rendered[page] = None
             continue
         md = _pdf2md(page.pdf_data, prompt=file_configs[page.parent].prompt)
         if md:
-            rendered[page] = md
+            rendered[page] = _postprocess(md)
         else:
-            failed.append(page)
+            failed.add(page)
     for page in failed:
         logger.error(
             f"Failed to convert {page.page_idx} of file {page.parent.name} to markdown."
         )
-    return rendered
+    return rendered, failed
+
+
+def _postprocess(md: str) -> str:
+    md = md.lstrip("\n").rstrip("\n")
+    if md.startswith("```markdown") and md.endswith("```"):
+        md = md[len("```markdown") : -len("```")]
+    return md.lstrip("\n").rstrip("\n")
 
 
 def _pdf2md(pdf_data: bytes, prompt: str) -> str:

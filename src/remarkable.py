@@ -132,7 +132,7 @@ def render_pages(
             try:
                 sftp.get(str(page_path), str(tmpdir / page_path.name))
             except FileNotFoundError:
-                logger.warning(f"Page does not exist {page_path}.")
+                logger.warning(f"Page does not exist {page_path}")
                 continue
             pdf_path = tmpdir / page_path.with_suffix(".pdf").name
             rm_to_pdf(tmpdir / page_path.name, pdf_path)

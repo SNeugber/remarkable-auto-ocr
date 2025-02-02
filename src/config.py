@@ -5,6 +5,10 @@ from typing import TypeAlias
 
 Seconds: TypeAlias = int
 
+_DEFAULT_PROMPT = """Render this document as rmarkdown and ensure that tables are rendered as such where required.
+Avoid wrapping the entire content in triple-backtick blocks (e.g. "```markdown ... ```"), just return the markdown as-is.
+"""
+
 
 @dataclass(frozen=True)
 class _Config:
@@ -16,7 +20,7 @@ class _Config:
     blacklist_path: str | None = None
     git_repo_path: str | None = None
     gdrive_folder_path: str | None = None
-    default_prompt: str = "Turn this document into markdown. Do not include any text other than the raw markdown."
+    default_prompt: str = _DEFAULT_PROMPT
     prompts_dir: str = "./data/prompts"
     render_path: str = "./data/renders"
 

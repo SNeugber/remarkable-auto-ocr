@@ -1,34 +1,67 @@
 from collections import defaultdict
 from io import BytesIO
 from pathlib import Path
+import re
 from models import RemarkableFile, RemarkablePage
 from config import Config
 from pypdf import PdfWriter
 
+PAGE_SEPARATOR = re.compile(r"^## Page \d+ - \[[0-9a-f\-]+\]$")
+
 
 def save(
-    pages: dict[RemarkablePage, str],
+    all_pages: list[RemarkablePage],
+    rendered_pages: dict[RemarkablePage, str],
 ) -> dict[RemarkableFile, list[RemarkablePage]]:
-    pages_with_md = {p: md for p, md in pages.items() if md is not None}
-    saved_md_files = _save_mds_to_disk(pages_with_md)
-    saved_pdf_files = _save_pdfs_to_disk(list(pages.keys()))
-    # saved_pdf_files: dict[RemarkableFile, list[RemarkablePage]] = _save_md_to_disk(md_files)
+    saved_md_files = _save_mds_to_disk(rendered_pages)
+    saved_pdf_files = _save_pdfs_to_disk(all_pages)
     if Config.git_repo_path:
         _sync_with_subrepo(saved_md_files)
     if Config.gdrive_folder_path:
         _copy_to_gdrive_folder(saved_pdf_files)
-    return {**saved_pdf_files, **saved_md_files}
+    return saved_pdf_files
 
 
-def _combine_md_pages(file_name: str, pages: dict[RemarkablePage, str]) -> str:
+def _split_md_into_pages(md: str) -> dict[int, list[str]]:
+    pages = {}
+    current_page = None
+    current_page_lines = []
+    for line in md.split("\n"):
+        page_sep = re.findall(PAGE_SEPARATOR, line)
+        if len(page_sep) > 1:
+            raise ValueError("Multiple page separators found in line.")
+        if len(page_sep) > 0:
+            pages[current_page] = current_page_lines
+            page_sep = page_sep[0]
+            page_num = int(page_sep.split(" - ")[0].split("## Page ")[1])
+            current_page = page_num
+            current_page_lines = []
+        current_page_lines.append(line)
+    pages[current_page] = current_page_lines
+    del pages[None]  # Remove anything before the first page
+    return pages
+
+
+def _combine_md_pages(
+    file_name: str, pages: dict[RemarkablePage, str], existing_md: str | None
+) -> str:
+    existing_pages = _split_md_into_pages(existing_md) if existing_md else {}
+    new_pages = {p.page_idx + 1: p for p in pages.keys()}
+    all_page_numbers = set(existing_pages.keys()) | set(new_pages.keys())
+
     lines = [f"# {file_name}\n"]
-    pages_sorted = sorted(pages.keys(), key=lambda p: p.page_idx)
-    for page in pages_sorted:
-        lines.append(f"## Page {page.page_idx + 1} - [{page.uuid}]\n")
-        for line in pages[page].split("\n"):
-            if line.startswith("#"):
-                line = "##" + line
-            lines.append(line)
+    for page_idx in sorted(all_page_numbers):
+        if page_idx in new_pages:
+            page = new_pages[page_idx]
+            lines.append(f"## Page {page_idx} - [{page.uuid}]\n")
+            for line in pages[page].split("\n"):
+                if line.startswith("#"):
+                    line = "##" + line
+                lines.append(line)
+            lines.append("\n")
+            continue
+        if page_idx in existing_pages:
+            lines += existing_pages[page_idx]
     return "\n".join(lines)
 
 
@@ -47,9 +80,9 @@ def _save_mds_to_disk(
         target_dir = parent_path.parent
         target_dir.mkdir(exist_ok=True, parents=True)
         file_name = parent_path.stem
-        # TODO: load existing data if it exists & merge with new data
-        md_combined = _combine_md_pages(file_name, pages)
         md_path = target_dir / f"{file_name}.md"
+        existing = md_path.read_text() if md_path.exists() else None
+        md_combined = _combine_md_pages(file_name, pages, existing)
         with open(md_path, "w") as f:
             f.write(md_combined)
         saved[parent] = pages
@@ -69,7 +102,6 @@ def _save_pdfs_to_disk(pages: list[RemarkablePage]) -> bytes:
         target_dir = parent_path.parent
         target_dir.mkdir(exist_ok=True, parents=True)
         file_name = parent_path.stem
-        # TODO: load existing data if it exists & merge with new data somehow...
         _save_combined_pdf(target_dir / f"{file_name}.pdf", pages)
         saved[parent] = pages
     return saved
