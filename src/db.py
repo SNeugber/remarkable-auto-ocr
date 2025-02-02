@@ -23,8 +23,6 @@ def out_of_sync_files(
     to_update = []
     meta_by_uuid = {meta.uuid: meta for meta in existing}
     for file in files:
-        if file.type != "DocumentType" or file.parent_uuid == "trash":
-            continue
         if (
             file.uuid not in meta_by_uuid
             or meta_by_uuid[file.uuid].last_modified < file.last_modified
@@ -49,6 +47,8 @@ def out_of_sync_pages(
 
 
 def mark_as_synced(saved: dict[RemarkableFile, list[RemarkablePage]], engine: Engine):
+    if len(saved) == 0:
+        return
     Session = sessionmaker(bind=engine)
     session = Session()
 

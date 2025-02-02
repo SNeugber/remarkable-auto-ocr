@@ -31,15 +31,6 @@ class Page(Base):
 
 
 @dataclass(eq=True, frozen=True)
-class RemarkablePage:
-    uuid: str
-    hash: str
-    parent_uuid: str
-    page_idx: int
-    data: bytes
-
-
-@dataclass(eq=True, frozen=True)
 class RemarkableFile:
     uuid: str
     name: str
@@ -47,3 +38,12 @@ class RemarkableFile:
     parent_uuid: str
     last_modified: datetime.date
     path: Path
+
+
+@dataclass(eq=True, frozen=True)
+class RemarkablePage:
+    uuid: str
+    hash: str
+    parent: RemarkableFile
+    page_idx: int
+    pdf_data: bytes

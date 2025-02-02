@@ -6,7 +6,6 @@ import tempfile
 from loguru import logger
 import pandas as pd
 from rmc import rm_to_pdf
-from pypdf import PdfWriter
 
 import paramiko
 from models import RemarkableFile, RemarkablePage
@@ -21,7 +20,7 @@ TmpMetadata = namedtuple("Metadata", ["filename", "st_mtime"])
 
 @contextmanager
 def connect(retries: int = 5) -> Iterator[paramiko.SSHClient | None]:
-    pk_file = Path(Config.SSHKeyPath)
+    pk_file = Path(Config.ssh_key_path)
     if not pk_file.exists():
         raise FileNotFoundError(pk_file)
     loader = (
@@ -35,7 +34,7 @@ def connect(retries: int = 5) -> Iterator[paramiko.SSHClient | None]:
     for _ in range(retries):
         try:
             client.connect(
-                Config.RemarkableIPAddress, username="root", pkey=pkey, timeout=5
+                Config.remarkable_ip_address, username="root", pkey=pkey, timeout=5
             )
             connected = True
             break
@@ -60,6 +59,11 @@ def get_files(
         TmpMetadata(*row) for row in meta_files[["filename", "st_mtime"]].values
     ]
     files = _load_metadata_files(sftp, meta_files)
+    files = [
+        file
+        for file in files
+        if file.type == "DocumentType" and file.parent_uuid != "trash"
+    ]
     sftp.close()
     return files
 
@@ -137,23 +141,11 @@ def render_pages(
                 page_data.append(
                     RemarkablePage(
                         page_idx=i,
-                        parent_uuid=metadata_file.uuid,
+                        parent=metadata_file,
                         uuid=page_path.stem,
-                        data=data,
+                        pdf_data=data,
                         hash=sha256(data).hexdigest(),
                     )
                 )
     sftp.close()
     return page_data
-
-
-def merge_pdfs(pages: list[RemarkablePage]) -> bytes:
-    writer = PdfWriter()
-    for page in pages:
-        writer.append(page.data)
-    with tempfile.TemporaryDirectory() as tmpdir:
-        pdf_path = Path(tmpdir) / "result.pdf"
-        writer.write(pdf_path)
-        writer.close()
-        with open(pdf_path, "rb") as f:
-            return f.read()

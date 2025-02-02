@@ -1,55 +1,86 @@
 from collections import defaultdict
+from io import BytesIO
 from pathlib import Path
 from models import RemarkableFile, RemarkablePage
 from config import Config
+from pypdf import PdfWriter
 
 
 def save(
-    files: list[RemarkableFile], md_files: dict[RemarkablePage, str]
+    pages: dict[RemarkablePage, str],
 ) -> dict[RemarkableFile, list[RemarkablePage]]:
-    saved: dict[RemarkableFile, list[RemarkablePage]] = _save_to_disk(md_files, files)
-    if Config.GitRepoPath:
-        _sync_with_subrepo([f for f in saved.values() if f.suffix == ".md"])
-    if Config.GDriveFolderPath:
-        _copy_to_gdrive_folder([f for f in saved.values() if f.suffix == ".pdf"])
-    return saved
+    pages_with_md = {p: md for p, md in pages.items() if md is not None}
+    saved_md_files = _save_mds_to_disk(pages_with_md)
+    saved_pdf_files = _save_pdfs_to_disk(list(pages.keys()))
+    # saved_pdf_files: dict[RemarkableFile, list[RemarkablePage]] = _save_md_to_disk(md_files)
+    if Config.git_repo_path:
+        _sync_with_subrepo(saved_md_files)
+    if Config.gdrive_folder_path:
+        _copy_to_gdrive_folder(saved_pdf_files)
+    return {**saved_pdf_files, **saved_md_files}
 
 
-def _combine_pages(file_name: str, pages: dict[RemarkablePage, str]) -> str:
+def _combine_md_pages(file_name: str, pages: dict[RemarkablePage, str]) -> str:
     lines = [f"# {file_name}\n"]
-    for page, md_data in pages.items():
+    pages_sorted = sorted(pages.keys(), key=lambda p: p.page_idx)
+    for page in pages_sorted:
         lines.append(f"## Page {page.page_idx + 1} - [{page.uuid}]\n")
-        for line in md_data.split("\n"):
+        for line in pages[page].split("\n"):
             if line.startswith("#"):
                 line = "##" + line
             lines.append(line)
     return "\n".join(lines)
 
 
-def _save_to_disk(
+def _save_mds_to_disk(
     md_files: dict[RemarkablePage, str],
-    files: list[RemarkableFile],
 ) -> dict[RemarkableFile, list[RemarkablePage]]:
-    base_dir = Path("./data/renders")
+    base_dir = Path(Config.render_path) / "md"
     saved = {}
-    files_lookup = {file.uuid: file for file in files}
 
-    pages_per_file = defaultdict(dict)
+    pages_per_file: dict[RemarkableFile, dict[RemarkablePage, str]] = defaultdict(dict)
     for page in md_files.keys():
-        pages_per_file[page.parent_uuid][page] = md_files[page]
+        pages_per_file[page.parent][page] = md_files[page]
 
-    for pages in pages_per_file.values():
-        parent = files_lookup[page.parent_uuid]
-        target_dir = (base_dir / parent.path).parent
+    for parent, pages in pages_per_file.items():
+        parent_path = base_dir / parent.path
+        target_dir = parent_path.parent
         target_dir.mkdir(exist_ok=True, parents=True)
-        file_name = Path(parent.name).stem
+        file_name = parent_path.stem
         # TODO: load existing data if it exists & merge with new data
-        md_combined = _combine_pages(file_name, pages)
+        md_combined = _combine_md_pages(file_name, pages)
         md_path = target_dir / f"{file_name}.md"
         with open(md_path, "w") as f:
             f.write(md_combined)
         saved[parent] = pages
     return saved
+
+
+def _save_pdfs_to_disk(pages: list[RemarkablePage]) -> bytes:
+    base_dir = Path(Config.render_path) / "pdf"
+    saved = {}
+
+    pages_per_file: dict[RemarkableFile, list[RemarkablePage]] = defaultdict(list)
+    for page in pages:
+        pages_per_file[page.parent].append(page)
+
+    for parent, pages in pages_per_file.items():
+        parent_path = base_dir / parent.path
+        target_dir = parent_path.parent
+        target_dir.mkdir(exist_ok=True, parents=True)
+        file_name = parent_path.stem
+        # TODO: load existing data if it exists & merge with new data somehow...
+        _save_combined_pdf(target_dir / f"{file_name}.pdf", pages)
+        saved[parent] = pages
+    return saved
+
+
+def _save_combined_pdf(pdf_path: Path, pages: list[RemarkablePage]) -> None:
+    writer = PdfWriter()
+    for page in sorted(pages, key=lambda p: p.page_idx):
+        writer.append(BytesIO(page.pdf_data))
+    writer.write(pdf_path)
+    writer.close()
 
 
 def _sync_with_subrepo():
