@@ -1,62 +1,131 @@
 # Remarkable Auto OCR
 
-1. Syncs a remarkable tablet over SSH
-1. Uploads files to [google OCR](/#TODO_link)
-1. Saves in gdrive
+This is a utility service intended to automatically sync and convert handwritten Remarkable documents:
 
-# Dev Setup
+1. Fetches files from remarkable tablet over SSH.
+1. Converts files to pdf using [rmc](https://github.com/ricklupton/rmc)
+1. Converts those files to markdown using the [Google AI Studio](https://aistudio.google.com/)
+
+## Dev Setup
 
 1. Install VSCode
 1. Install devcontainers extension
-1. Ensure `~/.ssh` exists
-1. Ensure `~/env.toml` exists
-1. Launch project in dev container
+1. Set up your tablet for [ssh key authentication](https://remarkable.guide/guide/access/ssh.html).
+1. Create a whitelist, blacklist, and custom prompts: [Which Files to Process](#which-files-to-process)
+1. Create a Google AI Studio API key: [Google AI Studio](https://aistudio.google.com/apikey)
+1. Create a file `env.toml` in your home directory: [Config](#config)
+1. Launch project in the dev container
 1. Run app through vscode using the configurations in `launch.json`
+
+## User Setup
+
+TBD...
+
+## Config
+
+The config file should be in the home directory under `env.toml` and contain the following keys:
+
+```toml
+[remarkable-auto-ocr-app]
+
+
+remarkable_ip_address = "192.168.1.xxx"   # TBD: fetch this automatically
+ssh_key_path = "/root/.ssh/id_rsa"        # for example
+check_interval = 120                      # how often to check for files to sync
+google_api_key = "your google api key"    # see below
+whitelist_path = "./data/whitelist.csv"   # see below
+blacklist_path = "./data/blacklist.csv"   # see below
+prompts_dir = "./data/prompts"            # see below
+default_prompt = "Turn this document into markdown"
+```
+
+Further configuration parameters can be found in [config.py](/src/config.py).
+
+## Which Files To Process
+
+To select which files should be processed and how to do so, you can create two files: `whitelist.csv` and `blacklist.csv`.
+
+⚠️ **Without a `whitelist.csv`, all files on the tablet will be processed!** ⚠️
+
+### whitelist.csv
+
+The whitelist is a list of paths that select which files to process. This can be paths to entire directories, or specific file paths. It should be structured as follows:
+
+```markdown
+| path   | prompt_path    | pdf_only |
+|--------|----------------|----------|
+| A/B    | prompt_ab.txt  | False    |
+| A/B/C  | prompt_abc.txt | False    |
+| C      |                | True     |
+| D      | D/prompt.txt   | True     |
+```
+
+- The `path` column specifies which files on the tablet to process.
+- The `prompt_path` column specifies whether a [prompt](#custom-prompts) different to the default prompt in the [config](#config) should be used.
+- The `pdf_only` column indicates whether files should be rendered as pdf only, instead of turning them into markdown by default.
+
+If the path is a directory then all files in that directory will be processed with the given configuration.
+
+➡️ More specific paths take precendence: in the example above `A/B/C` will use the prompt `prompt_abc.txt`, while all other files in `A/B/` will use the prompt in `prompt_ab.txt`
+
+⚠️ **If a prompt file referenced in `whitelist.csv` can not be found, all files that match this path in the whitelist will be skipped!** ⚠️
+
+### blacklist.csv
+
+The blacklist is a list of paths that matched in the whitelist, should be ignored for processing, e.g. if only one file in an entire directory should be ignored.
+
+```markdown
+| path   |
+|--------|
+| A/B/D  |
+| A/B/F  |
+```
+
+## Custom Prompts
+
+Custom prompts should be stored as text files relative to the `prompts_dir` set in the [config](#config).
+
+##### *example_prompt.txt*
+
+```txt
+Render this document as a markdown table. Ensure that the table contains columns `A`, `B`, and `C`.
+Do not include any text other than the raw markdown in the output.
+```
 
 ## TODO
 
 ### Prios
 
-1. Whitelist/blacklist + custom prompts
+1. Better place for user config
+1. Try to fetch IP automatically, might need to run this outside of docker
 1. Add files to git repo & commit
 1. Add files to gdrive folder
-1. Run as service in the background
+1. Build & deploy as service in the background
+1. Create relases by building it in CI
 1. Tests
 
 ### Dev Setup
 
 1. Create VSCode task to create `~/.env.toml`
-1. VSCode & ruff & UV seem to not be 100% happy yet
-   - The whole `launch.json` setup doesn't seem to work properly with the debugger yet...
-1. How to run and debug app properly with vscode? Seems to not debug quite right...
-1. Looks like WSL has problems with ExpressVPN :(
+1. VSCode & UV seem to not be 100% happy yet
+1. Looks like WSL + devcontianer means I can't find the IP address automatically?
 
 ### General App
 
-1. Load some sort of configuration file
-1. How to get secrets like google API keys and ssh key for tablet?
 1. Save sqlite DB somewhere as well, e.g. GDrive
 1. Run the whole thing as a service in the background
    - Use [nuitka](https://github.com/astral-sh/uv/issues/5802#issuecomment-2273058176) to make it distributable
-1. Front-end? Low prio...
 
 ### Remarkable Integration
 
-1. Fetch data via ssh/sftp using Paramiko ✅
-1. Need to load file paths for documents via metadata
-1. Provide a whitelist of documents/directories and potentially also specific prompts for each
+1. Find IP address based on MAC address
 
 ### Document Parsing
 
-1. Find best model to parse documents into markdown
+1. Explore other methods/models
 
-   - Gemini API
    - NotebookLLM API available yet?
-   - Run Deepseek R1 locally? -> Waaaay to big :D
-
-## Setup Instructions
-
-Set up the remarkable for ssh access by following [this guide](https://remarkable.guide/guide/access/ssh.html#setting-up-a-ssh-key)
+   - Run small Deepseek locally
 
 ## ChatGPT instructions
 
