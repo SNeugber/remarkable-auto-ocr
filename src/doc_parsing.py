@@ -28,8 +28,10 @@ def pages_to_md(
 
 def _postprocess(md: str) -> str:
     md = md.lstrip("\n").rstrip("\n")
-    if md.startswith("```markdown") and md.endswith("```"):
-        md = md[len("```markdown") : -len("```")]
+    if md.startswith("```markdown"):
+        md = md[len("```markdown") :]
+        if md.endswith("```"):  # It doesn't always, thanks to GenAI randomness...
+            md = md[: -len("```")]
     return md.lstrip("\n").rstrip("\n")
 
 
