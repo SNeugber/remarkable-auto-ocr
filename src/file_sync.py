@@ -149,15 +149,35 @@ def _save_markdown_repo_readme_file():
         readme = readme_path.read_text()
         readme = readme.split(DOCS_HEADER)[0]
 
-    # Taken from: https://stackoverflow.com/a/35889620
-    doc_tree = subprocess.check_output(
-        [
-            "tree -tf --noreport -I '*~' --charset ascii $1 | sed -e 's/| \+/  /g' -e 's/[|`]-\+/ */g' -e 's:\(* \)\(\(.*/\)\([^/]\+\)\):\1[\4](\2):g'"
-        ]
-    ).split("\n")[1:]
-    doc_tree = "\n".join(doc_tree)
+    doc_tree = "\n".join(
+        _dir_to_md_tree(
+            Path(Config.git_repo_path), Path(Config.git_repo_path) / "documents"
+        )
+    )
     combined = f"{readme}{DOCS_HEADER}{doc_tree}"
     readme_path.write_text(combined)
+
+
+def _dir_to_md_tree(root_path: Path, path: Path, prefix="  "):
+    indent = "  "
+    item_prefix = "* "
+
+    paths = list(path.glob("*"))
+    files = [path for path in paths if path.is_file()]
+    files.sort(key=lambda f: f.name)
+    lines = [
+        f"{prefix}{item_prefix}[{file.name}]({file.relative_to(root_path)})"
+        for file in files
+    ]
+
+    dirs = [path for path in paths if path.is_dir()]
+    dirs.sort(key=lambda d: d.name)
+    for dir in dirs:
+        lines.append(
+            f"{prefix}{item_prefix}[{dir.name}/]({dir.relative_to(root_path)})"
+        )
+        lines += _dir_to_md_tree(root_path, dir, prefix + indent)
+    return lines
 
 
 def _copy_to_gdrive_folder():

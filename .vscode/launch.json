@@ -11,5 +11,15 @@
             "python": "${workspaceFolder}/.venv/bin/python",
             "preLaunchTask": "uv-sync",
         },
+        {
+            "name": "Exec Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "console": "integratedTerminal",
+            "program": "${file}",
+            "justMyCode": "false",
+            "python": "${workspaceFolder}/.venv/bin/python",
+            "preLaunchTask": "uv-sync",
+        },
     ]
 }
