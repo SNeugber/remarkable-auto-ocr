@@ -28,7 +28,7 @@ def run():
             files = remarkable.get_files(session)
             file_configs = fpc.get_configs_for_files(files)
             files_to_process = list(file_configs.keys())
-            files_to_update = db.out_of_sync_files(files_to_process, engine)[:1]
+            files_to_update = db.out_of_sync_files(files_to_process, engine)
             if not files_to_update:
                 continue
             pages = [remarkable.render_pages(session, file) for file in files_to_update]

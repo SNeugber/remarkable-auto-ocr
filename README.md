@@ -97,6 +97,8 @@ Do not include any text other than the raw markdown in the output.
 ### Prios
 
 1. Somehow overlay annotated pdfs with their original pdf...
+1. Replace sqlite db with dataframes
+1. Save hash of prompt to check if document needs to be re-rendered
 1. Better place for user config
 1. Try to fetch IP automatically, might need to run this outside of docker
 1. Add files to gdrive folder, see [here](https://askubuntu.com/a/1336612)
