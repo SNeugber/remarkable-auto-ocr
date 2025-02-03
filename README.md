@@ -101,6 +101,7 @@ Do not include any text other than the raw markdown in the output.
 1. Better place for user config
 1. Try to fetch IP automatically, might need to run this outside of docker
 1. Add files to gdrive folder, see [here](https://askubuntu.com/a/1336612)
+   - This works, the path just needs to include the full thing, e.g. `cp -R ./* /run/user/<UID>/gvfs/google-drive\:host\=gmail.com\,user\=<gmail.user.name>/My\ Drive/<TargetDir>/`
 1. Build & deploy as service in the background
 1. Create relases by building it in CI
 1. Tests
