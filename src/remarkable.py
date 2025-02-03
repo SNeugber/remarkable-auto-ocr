@@ -1,11 +1,14 @@
 from collections import namedtuple
 from datetime import datetime
+from io import BytesIO
 import json
 from pathlib import Path
 import tempfile
 from loguru import logger
 import pandas as pd
-from rmc import rm_to_pdf
+import rmc
+from pypdf import PdfReader, PdfWriter, PageObject
+from pypdf.generic import RectangleObject
 
 import paramiko
 from models import RemarkableFile, RemarkablePage
@@ -55,10 +58,15 @@ def get_files(
         [attr.__dict__ for attr in sftp.listdir_attr(str(FILES_ROOT))]
     )
     meta_files = files_df[files_df.filename.str.endswith(".metadata")]
+    pdf_file_uuids = set(
+        files_df[files_df.filename.str.endswith(".pdf")].filename.apply(
+            lambda p: Path(p).stem
+        )
+    )
     meta_files = [
         TmpMetadata(*row) for row in meta_files[["filename", "st_mtime"]].values
     ]
-    files = _load_metadata_files(sftp, meta_files)
+    files = _load_metadata_files(sftp, meta_files, pdf_file_uuids)
     files = [
         file
         for file in files
@@ -69,7 +77,9 @@ def get_files(
 
 
 def _load_metadata_files(
-    sftp: paramiko.SSHClient, metadata_files: list[TmpMetadata]
+    sftp: paramiko.SSHClient,
+    metadata_files: list[TmpMetadata],
+    pdf_file_uuids: set[str],
 ) -> RemarkableFile:
     data = {
         Path(file.filename).stem: {
@@ -88,6 +98,7 @@ def _load_metadata_files(
             name=meta["visibleName"],
             type=meta["type"],
             path=paths[uuid],
+            has_pdf=uuid in pdf_file_uuids,
         )
         for uuid, meta in data.items()
     ]
@@ -112,9 +123,14 @@ def render_pages(
     client: paramiko.SSHClient, metadata_file: RemarkableFile
 ) -> list[RemarkablePage]:
     sftp = client.open_sftp()
+    pdf_data = None
     try:
         content_file = FILES_ROOT / (metadata_file.uuid + ".content")
         content = json.loads(sftp.open(str(content_file)).read())
+
+        if metadata_file.has_pdf:
+            pdf_file = FILES_ROOT / (metadata_file.uuid + ".pdf")
+            pdf_data = PdfReader(BytesIO(sftp.open(str(pdf_file)).read()))
     except IOError as e:
         logger.info(f"No content file for {metadata_file.uuid}.\n{e}")
         sftp.close()
@@ -135,7 +151,14 @@ def render_pages(
                 logger.warning(f"Page does not exist {page_path}")
                 continue
             pdf_path = tmpdir / page_path.with_suffix(".pdf").name
-            rm_to_pdf(tmpdir / page_path.name, pdf_path)
+            rmc.rm_to_pdf(tmpdir / page_path.name, pdf_path)
+            if pdf_data:
+                _overlay(
+                    existing=pdf_data,
+                    rm_page=tmpdir / page_path.name,
+                    overlay=pdf_path,
+                    page=i,
+                )
             with open(pdf_path, "rb") as f:
                 data = f.read()
                 page_data.append(
@@ -149,3 +172,85 @@ def render_pages(
                 )
     sftp.close()
     return page_data
+
+
+def _overlay(existing: PdfReader, rm_page: Path, overlay: Path, page: int) -> None:
+    """
+    This function is intended to overlay annotations over existing PDF files.
+
+    ⚠️ It is kind of broken, only works like 99% ish ⚠️
+    The problem is that the pdf rendered by rmc is still using hardcoded
+    values for the remarkable 2, whereas the paper pro has a different
+    screen size/resolution/dpi.
+
+    rmc also renders pdf cropped tight around the content, so we have to offset & scale them
+    to match the original pdf's dimensions.
+
+    Lastly merging protated dfs is causing issues, because it looks like the rmc-rendered pdf
+    doesn't have the rotation set (correctly?), so when overlaying them naively one of them isn't
+    rotated.
+
+    Hence we basically:
+    1. fix offset
+    2. un-rotate
+    3. scale
+    4. re-rotate
+    """
+
+    existing_page = existing.pages[page]
+    overlay_page = PdfReader(overlay).pages[0]
+    overlay_page.mediabox = _get_mediabox_with_xy_offset_corrected(
+        overlay_page, rm_page
+    )
+
+    rotation = existing_page.rotation
+    if rotation:
+        overlay_page = overlay_page.rotate(-rotation)
+        overlay_page.transfer_rotation_to_content()
+
+    overlay_page.scale_to(
+        width=existing_page.mediabox.width, height=existing_page.mediabox.height
+    )
+    overlay_page.merge_page(existing_page, expand=True, over=False)
+    if rotation:
+        overlay_page = overlay_page.rotate(rotation)
+        overlay_page.transfer_rotation_to_content()
+    writer = PdfWriter()
+    writer.add_page(overlay_page)
+    writer.write(overlay)
+    writer.close()
+
+
+def _get_mediabox_with_xy_offset_corrected(page: PageObject, rm_page_path: Path):
+    with open(rm_page_path, "rb") as f:
+        tree = rmc.exporters.svg.read_tree(f)
+    anchor_pos = rmc.exporters.svg.build_anchor_pos(tree.root_text)
+    x_min, _, y_min, _ = rmc.exporters.svg.get_bounding_box(tree.root, anchor_pos)
+    x_offset = _scale_x(x_min)
+    y_offset = _scale_y(y_min)
+
+    return RectangleObject(
+        (
+            x_offset,
+            y_offset,
+            page.mediabox.right - x_offset,
+            page.mediabox.top - y_offset,
+        )
+    )
+
+
+def _scale_x(x: float):
+    X_RES = 1620
+    return _scale(x, X_RES)
+
+
+def _scale_y(x: float):
+    Y_RES = 2160
+    return _scale(x, Y_RES)
+
+
+def _scale(x: float, resolution: float) -> float:
+    SCREEN_DPI = 229
+    SCALE_DPI = 72.0 / SCREEN_DPI
+    SCALE_RES = resolution / SCREEN_DPI
+    return (x * SCALE_DPI) / SCALE_RES

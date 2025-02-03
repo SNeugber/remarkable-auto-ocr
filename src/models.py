@@ -38,6 +38,7 @@ class RemarkableFile:
     parent_uuid: str
     last_modified: datetime.date
     path: Path
+    has_pdf: bool
 
 
 @dataclass(eq=True, frozen=True)
