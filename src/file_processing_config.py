@@ -54,7 +54,7 @@ def _get_processing_config_for_file(
             logger.error(
                 f"Trying to force reprocessing of {file.path},\n"
                 f"but incorrect reprocessing config given: {most_specific.force_reprocess}\n"
-                f"Valid options are: {reprocess_values}."
+                f"Valid options are: {reprocess_values}.\n"
                 f"Skipping file..."
             )
             return None

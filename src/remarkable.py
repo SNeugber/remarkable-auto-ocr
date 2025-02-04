@@ -123,14 +123,14 @@ def render_pages(
     client: paramiko.SSHClient, metadata_file: RemarkableFile
 ) -> list[RemarkablePage]:
     sftp = client.open_sftp()
-    pdf_data = None
+    existing_pdf = None
     try:
         content_file = FILES_ROOT / (metadata_file.uuid + ".content")
         content = json.loads(sftp.open(str(content_file)).read())
 
         if metadata_file.has_pdf:
-            pdf_file = FILES_ROOT / (metadata_file.uuid + ".pdf")
-            pdf_data = PdfReader(BytesIO(sftp.open(str(pdf_file)).read()))
+            existing_pdf_path = FILES_ROOT / (metadata_file.uuid + ".pdf")
+            existing_pdf = PdfReader(BytesIO(sftp.open(str(existing_pdf_path)).read()))
     except IOError as e:
         logger.info(f"No content file for {metadata_file.uuid}.\n{e}")
         sftp.close()
@@ -140,25 +140,42 @@ def render_pages(
     page_paths = [
         FILES_ROOT / metadata_file.uuid / f"{page['id']}.rm" for page in pages
     ]
+    existing_pdf_page_indexes = (
+        # Page indexes in the original pdf, if this is an annotated PDF
+        # "None" values indicate new remarkable pages added to the PDF
+        [page.get("redir", {}).get("value", None) for page in pages]
+        if existing_pdf
+        else []
+    )
 
     page_data = []
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
         for i, page_path in enumerate(page_paths):
+            blank_page = False
             try:
                 sftp.get(str(page_path), str(tmpdir / page_path.name))
             except FileNotFoundError:
-                logger.warning(f"Page does not exist {page_path}")
-                continue
+                if existing_pdf and existing_pdf_page_indexes[i] is not None:
+                    blank_page = True
+                else:
+                    logger.warning(f"Page does not exist {page_path}")
+                    continue
             pdf_path = tmpdir / page_path.with_suffix(".pdf").name
-            rmc.rm_to_pdf(tmpdir / page_path.name, pdf_path)
-            if pdf_data:
-                _overlay(
-                    existing=pdf_data,
-                    rm_page=tmpdir / page_path.name,
-                    overlay=pdf_path,
-                    page=i,
-                )
+            if blank_page:
+                writer = PdfWriter()
+                writer.add_page(existing_pdf.pages[existing_pdf_page_indexes[i]])
+                writer.write(pdf_path)
+                writer.close()
+            else:
+                rmc.rm_to_pdf(tmpdir / page_path.name, pdf_path)
+                if existing_pdf and existing_pdf_page_indexes[i] is not None:
+                    _overlay(
+                        existing=existing_pdf,
+                        rm_page=tmpdir / page_path.name,
+                        overlay=pdf_path,
+                        page=existing_pdf_page_indexes[i],
+                    )
             with open(pdf_path, "rb") as f:
                 data = f.read()
                 page_data.append(
@@ -170,6 +187,7 @@ def render_pages(
                         hash=sha256(data).hexdigest(),
                     )
                 )
+
     sftp.close()
     return page_data
 
@@ -199,9 +217,10 @@ def _overlay(existing: PdfReader, rm_page: Path, overlay: Path, page: int) -> No
 
     existing_page = existing.pages[page]
     overlay_page = PdfReader(overlay).pages[0]
-    overlay_page.mediabox = _get_mediabox_with_xy_offset_corrected(
-        overlay_page, rm_page
-    )
+    # TODO: this isn't working :( for most documents
+    # overlay_page.mediabox = _get_mediabox_with_xy_offset_corrected(
+    #     overlay_page, rm_page
+    # )
 
     rotation = existing_page.rotation
     if rotation:
