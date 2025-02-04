@@ -92,14 +92,27 @@ Render this document as a markdown table. Ensure that the table contains columns
 Do not include any text other than the raw markdown in the output.
 ```
 
+## Known Issues
+
+### PDF overlays from Paper Pro
+
+[rmc](https://github.com/ricklupton/rmc) isn't quite ready for data from the paper pro tablet. It also crops tightly around the text,
+instead of keeping the margins alive, so text annotations which are overlayed on top of PDFs don't end up in the right spot :(
+
+### Finding the tablet IP automatically
+
+I'd ideally like to find the IP of the tablet automatically using the MAC address and `arp-scan`. But I'm using rootless docker,
+and in there I can't run `arp-scan`. So either I use rootfull docker for deploying the final package, or I have to make certain
+apt packages mandatory during installation and limit the app to run in ubuntu/linux.
+
+At least on Windows this could work in WSL? But it wouldn't work during development...
+
 ## TODO
 
 ### Prios
 
-1. Replace sqlite db with dataframes
 1. Save hash of prompt to check if document needs to be re-rendered
 1. Better place for user config
-1. Try to fetch IP automatically, might need to run this outside of docker
 1. Add files to gdrive folder, see [here](https://askubuntu.com/a/1336612)
    - This works, the path just needs to include the full thing, e.g. `cp -R ./* /run/user/<UID>/gvfs/google-drive\:host\=gmail.com\,user\=<gmail.user.name>/My\ Drive/<TargetDir>/`
 1. Build & deploy as service in the background

@@ -37,6 +37,7 @@ def out_of_sync_files(
         if (
             file.uuid not in meta_by_uuid
             or meta_by_uuid[file.uuid].last_modified < file.last_modified
+            or (meta_by_uuid[file.uuid].prompt_hash != file_configs[file].prompt_hash)
         ):
             files_to_update.append(file)
     return files_to_update
@@ -57,7 +58,11 @@ def out_of_sync_pages(
     return to_update
 
 
-def mark_as_synced(saved: dict[RemarkableFile, list[RemarkablePage]], engine: Engine):
+def mark_as_synced(
+    saved: dict[RemarkableFile, list[RemarkablePage]],
+    file_configs: dict[RemarkableFile, ProcessingConfig],
+    engine: Engine,
+):
     if len(saved) == 0:
         return
     Session = sessionmaker(bind=engine)
@@ -79,6 +84,7 @@ def mark_as_synced(saved: dict[RemarkableFile, list[RemarkablePage]], engine: En
         metadata.last_modified = file.last_modified
         metadata.parent_uuid = file.parent_uuid
         metadata.type = file.type
+        metadata.prompt_hash = file_configs[file].prompt_hash
         new_pages = []
         for page in pages:
             if page.uuid in existing_pages:

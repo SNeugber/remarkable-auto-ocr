@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
+from hashlib import sha256
 from pathlib import Path
 import pandas as pd
 from config import Config
@@ -12,6 +13,12 @@ class ProcessingConfig:
     pdf_only: bool
     force_reprocess: bool
     prompt: str | None
+
+    @property
+    def prompt_hash(self) -> str | None:
+        if self.prompt is None:
+            return None
+        return sha256(self.prompt.encode("utf-8")).hexdigest()
 
 
 class ReprocessValues(Enum):

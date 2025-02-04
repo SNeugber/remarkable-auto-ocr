@@ -15,12 +15,10 @@ logger.add("./logs/debug.log", level="INFO")
 def run():
     logger.info("Service is running...")
     engine = db.get_engine()
-    first = True
+    check_interval = 0
     while True:
-        if first:
-            first = False
-        else:
-            time.sleep(Config.check_interval)
+        time.sleep(check_interval)
+        check_interval = Config.check_interval
         with remarkable.connect() as session:
             if session is None:
                 logger.warning("Could not connect to Remarkable.")
@@ -41,7 +39,7 @@ def run():
             for file, pages in saved.items()
             if not any([p for p in pages if p in failed])
         }
-        db.mark_as_synced(saved, engine)
+        db.mark_as_synced(saved, file_configs, engine)
 
 
 def main():

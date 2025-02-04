@@ -19,6 +19,7 @@ class Metadata(Base):
     last_modified = Column(DateTime)
     parent_uuid = Column(String)
     type = Column(String)
+    prompt_hash = Column(String, nullable=True)
     pages: Mapped[list["Page"]] = relationship()
 
 
