@@ -18,8 +18,8 @@ class _Config:
     check_interval: Seconds = 120
     whitelist_path: str | None = None
     blacklist_path: str | None = None
-    git_repo_path: str | None = None
-    gdrive_folder_path: str | None = None
+    md_repo_path: str | None = None
+    pdf_copy_path: str | None = None
     default_prompt: str = _DEFAULT_PROMPT
     prompts_dir: str = "./data/prompts"
     render_path: str = "./data/renders"

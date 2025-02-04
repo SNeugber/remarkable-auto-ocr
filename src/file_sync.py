@@ -19,9 +19,9 @@ def save(
 ) -> dict[RemarkableFile, list[RemarkablePage]]:
     _save_mds_to_disk(rendered_pages)
     saved_pdf_files = _save_pdfs_to_disk(all_pages)
-    if Config.git_repo_path:
+    if Config.md_repo_path:
         _sync_with_subrepo()
-    if Config.gdrive_folder_path:
+    if Config.pdf_copy_path:
         _copy_to_gdrive_folder(saved_pdf_files)
     return saved_pdf_files
 
@@ -122,28 +122,28 @@ def _save_combined_pdf(pdf_path: Path, pages: list[RemarkablePage]) -> None:
 def _sync_with_subrepo():
     base_dir = Path(Config.render_path) / "md"
     shutil.copytree(
-        base_dir, Path(Config.git_repo_path) / "documents", dirs_exist_ok=True
+        base_dir, Path(Config.md_repo_path) / "documents", dirs_exist_ok=True
     )
     _save_markdown_repo_readme_file()
     try:
-        subprocess.run(["git", "add", "."], cwd=Config.git_repo_path, check=True)
+        subprocess.run(["git", "add", "."], cwd=Config.md_repo_path, check=True)
         subprocess.run(
             ["git", "commit", "-m", "Update files"],
-            cwd=Config.git_repo_path,
+            cwd=Config.md_repo_path,
             check=True,
         )
-        subprocess.run(["git", "push"], cwd=Config.git_repo_path, check=True)
+        subprocess.run(["git", "push"], cwd=Config.md_repo_path, check=True)
     except subprocess.CalledProcessError as e:
         logger.error(f"Unable to sync files with with subrepo: {e}")
 
 
 def _save_markdown_repo_readme_file():
     readme_path = [
-        p for p in Path(Config.git_repo_path).glob("*.md") if p.stem.lower() == "readme"
+        p for p in Path(Config.md_repo_path).glob("*.md") if p.stem.lower() == "readme"
     ]
     DOCS_HEADER = "\n\n## Documents\n\n"
     if not readme_path:
-        readme_path = Path(Config.git_repo_path) / "README.md"
+        readme_path = Path(Config.md_repo_path) / "README.md"
         readme = "# Markdown Documents from Remarkable"
     else:
         readme_path = readme_path[0]
@@ -152,7 +152,7 @@ def _save_markdown_repo_readme_file():
 
     doc_tree = "\n".join(
         _dir_to_md_tree(
-            Path(Config.git_repo_path), Path(Config.git_repo_path) / "documents"
+            Path(Config.md_repo_path), Path(Config.md_repo_path) / "documents"
         )
     )
     combined = f"{readme}{DOCS_HEADER}{doc_tree}"
