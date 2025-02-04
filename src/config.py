@@ -26,9 +26,15 @@ class _Config:
 
 
 def _load():
-    path = Path.home() / "env.toml"
-    data = tomllib.load(path.open("rb"))
-    return _Config(**data["remarkable-auto-ocr-app"])
+    for path in [
+        Path.home() / ".config" / "remarkable-auto-ocr" / "config.toml",
+        Path(__file__).parent.parent / "config.toml",
+    ]:
+        if not path.exists():
+            continue
+        data = tomllib.load(path.open("rb"))
+        return _Config(**data["remarkable-auto-ocr-app"])
+    raise FileNotFoundError("Unable to find a config file, aborting")
 
 
 Config = _load()

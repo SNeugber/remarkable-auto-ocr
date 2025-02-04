@@ -111,8 +111,6 @@ At least on Windows this could work in WSL? But it wouldn't work during developm
 
 ### Prios
 
-1. Save hash of prompt to check if document needs to be re-rendered
-1. Better place for user config
 1. Add files to gdrive folder, see [here](https://askubuntu.com/a/1336612)
    - This works, the path just needs to include the full thing, e.g. `cp -R ./* /run/user/<UID>/gvfs/google-drive\:host\=gmail.com\,user\=<gmail.user.name>/My\ Drive/<TargetDir>/`
 1. Build & deploy as service in the background
