@@ -37,7 +37,7 @@ def run():
         saved = {
             file: pages
             for file, pages in saved.items()
-            if not any([p for p in pages if p in failed])
+            if not any([p in failed for p in pages])
         }
         db.mark_as_synced(saved, file_configs, engine)
 
