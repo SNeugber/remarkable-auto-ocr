@@ -1,0 +1,6 @@
+# https://mdformat.readthedocs.io/en/stable/users/configuration_file.html
+# https://mdformat.readthedocs.io/en/stable/users/installation_and_usage.html#options
+
+wrap = 120          # possible values: {"keep", "no", INTEGER}
+number = false      # possible values: {false, true}
+end_of_line = "lf"  # possible values: {"lf", "crlf", "keep"}
