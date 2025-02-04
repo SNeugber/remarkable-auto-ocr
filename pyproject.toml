@@ -24,4 +24,4 @@ dev = [
 ]
 
 [tool.uv.sources]
-rmc = { git = "https://github.com/SNeugber/rmc" }
+rmc = { git = "https://github.com/SNeugber/rmc", rev = "main" }

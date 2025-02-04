@@ -740,7 +740,7 @@ requires-dist = [
     { name = "pandas", specifier = ">=2.2.3" },
     { name = "paramiko", specifier = ">=3.5.0" },
     { name = "pypdf", specifier = ">=5.2.0" },
-    { name = "rmc", git = "https://github.com/SNeugber/rmc" },
+    { name = "rmc", git = "https://github.com/SNeugber/rmc?rev=main" },
     { name = "rmrl", specifier = ">=0.2.1" },
     { name = "setuptools", specifier = ">=75.8.0" },
     { name = "sqlalchemy", specifier = ">=2.0.37" },
@@ -776,7 +776,7 @@ wheels = [
 [[package]]
 name = "rmc"
 version = "0.2.1.dev0"
-source = { git = "https://github.com/SNeugber/rmc#1679f1516cee53dd9b061e98efc837150a2fa39b" }
+source = { git = "https://github.com/SNeugber/rmc?rev=main#49174f5bbc6b60385ce55382730fab5aeb0e6a76" }
 dependencies = [
     { name = "click" },
     { name = "rmscene" },
