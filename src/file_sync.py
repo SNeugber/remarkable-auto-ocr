@@ -18,11 +18,11 @@ def save(
     rendered_pages: dict[RemarkablePage, str],
 ) -> dict[RemarkableFile, list[RemarkablePage]]:
     _save_mds_to_disk(rendered_pages)
-    saved_pdf_files = _save_pdfs_to_disk(all_pages)
+    saved_pdf_files, saved_paths = _save_pdfs_to_disk(all_pages)
     if Config.md_repo_path:
         _sync_with_subrepo()
     if Config.pdf_copy_path:
-        _copy_to_gdrive_folder(saved_pdf_files)
+        _copy_to_external_folder(saved_paths)
     return saved_pdf_files
 
 
@@ -93,9 +93,12 @@ def _save_mds_to_disk(
     return saved
 
 
-def _save_pdfs_to_disk(pages: list[RemarkablePage]) -> bytes:
+def _save_pdfs_to_disk(
+    pages: list[RemarkablePage],
+) -> tuple[dict[RemarkableFile, list[RemarkablePage]], list[Path]]:
     base_dir = Path(Config.render_path) / "pdf"
     saved = {}
+    file_paths = []
 
     pages_per_file: dict[RemarkableFile, list[RemarkablePage]] = defaultdict(list)
     for page in pages:
@@ -106,9 +109,11 @@ def _save_pdfs_to_disk(pages: list[RemarkablePage]) -> bytes:
         target_dir = parent_path.parent
         target_dir.mkdir(exist_ok=True, parents=True)
         file_name = parent_path.stem
-        _save_combined_pdf(target_dir / f"{file_name}.pdf", pages)
+        target_path = target_dir / f"{file_name}.pdf"
+        _save_combined_pdf(target_path, pages)
         saved[parent] = pages
-    return saved
+        file_paths.append(target_path)
+    return saved, file_paths
 
 
 def _save_combined_pdf(pdf_path: Path, pages: list[RemarkablePage]) -> None:
@@ -121,6 +126,9 @@ def _save_combined_pdf(pdf_path: Path, pages: list[RemarkablePage]) -> None:
 
 def _sync_with_subrepo():
     base_dir = Path(Config.render_path) / "md"
+    if not Path(Config.md_repo_path).exists():
+        logger.error("Repo to save markdown files to does not exist! Aborting ...")
+        return
     shutil.copytree(
         base_dir, Path(Config.md_repo_path) / "documents", dirs_exist_ok=True
     )
@@ -181,5 +189,14 @@ def _dir_to_md_tree(root_path: Path, path: Path, prefix="  "):
     return lines
 
 
-def _copy_to_gdrive_folder():
-    pass
+def _copy_to_external_folder(paths: list[Path]):
+    base_dir = Path(Config.render_path) / "pdf"
+    if not Path(Config.pdf_copy_path).exists():
+        logger.error(
+            "Directory to save pdf files to does not exist! Have you mounted/started e.g. google drive?"
+        )
+        return
+    for path in paths:
+        target_path = Config.pdf_copy_path / (path.relative_to(base_dir))
+        target_path.parent.mkdir(exist_ok=True, parents=True)
+        subprocess.check_call(["cp", str(path), str(target_path)])

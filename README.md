@@ -128,6 +128,14 @@ want to save the pdfs in.
 
 ⚠️ When running in docker, ensure that this folder is mounted! ⚠️
 
+E.g. in `devcontainer.json`:
+
+```json
+	"mounts": [
+		"\"source=/run/user/1000/gvfs/google-drive:host=gmail.com,user=my.username/\",target=/data/gdrive,type=bind"
+	],
+```
+
 ## Known Issues
 
 ### PDF overlays from Paper Pro
@@ -148,9 +156,6 @@ At least on Windows this could work in WSL? But it wouldn't work during developm
 
 ### Prios
 
-1. Add files to gdrive folder, see [here](https://askubuntu.com/a/1336612)
-   - This works, the path just needs to include the full thing, e.g.
-     `cp -R ./* /run/user/<UID>/gvfs/google-drive\:host\=gmail.com\,user\=<gmail.user.name>/My\ Drive/<TargetDir>/`
 1. Build & deploy as service in the background
 1. Create relases by building it in CI
 1. Tests
@@ -160,6 +165,7 @@ At least on Windows this could work in WSL? But it wouldn't work during developm
 1. Create VSCode task to create `~/.env.toml`
 1. VSCode & UV seem to not be 100% happy yet
 1. Looks like WSL + devcontianer means I can't find the IP address automatically?
+   - This appears to be due to rootless docker 🤦
 
 ### General App
 
