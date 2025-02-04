@@ -1,6 +1,7 @@
 # Custom directories
 data/
 logs/
+config.toml
 
 # Ruff
 .ruff_cache/
