@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 import pandas as pd
 from config import Config
@@ -9,7 +10,13 @@ from loguru import logger
 @dataclass
 class ProcessingConfig:
     pdf_only: bool
+    force_reprocess: bool
     prompt: str | None
+
+
+class ReprocessValues(Enum):
+    ONCE = "once"
+    ALWAYS = "always"
 
 
 def _load_filters() -> tuple[pd.DataFrame | None, pd.DataFrame | None]:
@@ -40,7 +47,23 @@ def _get_processing_config_for_file(
             )
             return None
         prompt = prompts[most_specific.prompt_path]
-    return ProcessingConfig(pdf_only=bool(most_specific.pdf_only), prompt=prompt)
+    force_reprocess = False
+    if not pd.isna(most_specific.force_reprocess):
+        reprocess_values = [e.value for e in ReprocessValues]
+        if str(most_specific.force_reprocess).lower() not in reprocess_values:
+            logger.error(
+                f"Trying to force reprocessing of {file.path},\n"
+                f"but incorrect reprocessing config given: {most_specific.force_reprocess}\n"
+                f"Valid options are: {reprocess_values}."
+                f"Skipping file..."
+            )
+            return None
+        force_reprocess = True
+    return ProcessingConfig(
+        pdf_only=bool(most_specific.pdf_only),
+        prompt=prompt,
+        force_reprocess=force_reprocess,
+    )
 
 
 def _load_prompts() -> dict[str, str]:
@@ -62,7 +85,9 @@ def get_configs_for_files(
         if whitelist is not None:
             config = _get_processing_config_for_file(file, whitelist, prompts)
         else:
-            config = ProcessingConfig(pdf_only=False, prompt=Config.default_prompt)
+            config = ProcessingConfig(
+                pdf_only=False, prompt=Config.default_prompt, force_reprocess=False
+            )
         if (
             blacklist is not None
             and len(_get_matches_in_dataframe(file, blacklist)) > 0
@@ -70,4 +95,15 @@ def get_configs_for_files(
             config = None
         if config is not None:
             configs[file] = config
+    if whitelist is not None:
+        whitelist = _update_reprocess_values(whitelist)
+        whitelist.to_csv(Path(Config.whitelist_path), index=False)
     return configs
+
+
+def _update_reprocess_values(df: pd.DataFrame) -> pd.DataFrame:
+    df.loc[
+        df.force_reprocess.astype(str).str.lower() == ReprocessValues.ONCE.value,
+        "force_reprocess",
+    ] = pd.NA
+    return df

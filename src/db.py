@@ -1,5 +1,6 @@
 from collections.abc import Iterable
 from pathlib import Path
+from file_processing_config import ProcessingConfig
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
@@ -15,22 +16,30 @@ def get_engine() -> Engine:
 
 
 def out_of_sync_files(
-    files: list[RemarkableFile], engine: Engine
+    file_configs: dict[RemarkableFile, ProcessingConfig], engine: Engine
 ) -> list[RemarkableFile]:
+    files_to_update = [
+        file for file, config in file_configs.items() if config.force_reprocess
+    ]
+    files_to_check_sync = [
+        file for file, config in file_configs.items() if not config.force_reprocess
+    ]
+
     Session = sessionmaker(bind=engine)
     session = Session()
     existing = (
-        session.query(Metadata).filter(Metadata.uuid.in_([f.uuid for f in files])).all()
+        session.query(Metadata)
+        .filter(Metadata.uuid.in_([f.uuid for f in files_to_check_sync]))
+        .all()
     )
-    to_update = []
     meta_by_uuid = {meta.uuid: meta for meta in existing}
-    for file in files:
+    for file in files_to_check_sync:
         if (
             file.uuid not in meta_by_uuid
             or meta_by_uuid[file.uuid].last_modified < file.last_modified
         ):
-            to_update.append(file)
-    return to_update
+            files_to_update.append(file)
+    return files_to_update
 
 
 def out_of_sync_pages(
