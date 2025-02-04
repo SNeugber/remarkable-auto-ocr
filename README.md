@@ -160,22 +160,18 @@ At least on Windows this could work in WSL? But it wouldn't work during developm
 1. Create relases by building it in CI
 1. Tests
 
-### Dev Setup
-
-1. Create VSCode task to create `~/.env.toml`
-1. VSCode & UV seem to not be 100% happy yet
-1. Looks like WSL + devcontianer means I can't find the IP address automatically?
-   - This appears to be due to rootless docker 🤦
-
 ### General App
 
-1. Save sqlite DB somewhere as well, e.g. GDrive
 1. Run the whole thing as a service in the background
-   - Use [nuitka](https://github.com/astral-sh/uv/issues/5802#issuecomment-2273058176) to make it distributable
+   - Use [nuitka](https://github.com/astral-sh/uv/issues/5802#issuecomment-2273058176) to make it distributable?
+   - No, instead run it as a docker container as a systemd service
 
-### Remarkable Integration
+To run the project as a docker image as a service:
 
-1. Find IP address based on MAC address
+- Create a `deploy.dockerfile` which uses a multi-stage build to build everything with uv as a wheel, the install the
+  wheel in the 2nd stage
+- Run the container as a service, with the relevant stuff mounted, e.g. config directory, paths and such
+- The container should create a `data` volume where it can store renders and such
 
 ### Document Parsing
 
