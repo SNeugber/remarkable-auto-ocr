@@ -3,11 +3,12 @@ from datetime import datetime
 from io import BytesIO
 import json
 from pathlib import Path
+import re
 import tempfile
 from loguru import logger
 import pandas as pd
 import rmc
-from pypdf import PdfReader, PdfWriter, PageObject
+from pypdf import PdfReader, PdfWriter, PageObject, Transformation
 from pypdf.generic import RectangleObject
 
 import paramiko
@@ -18,6 +19,16 @@ from collections.abc import Iterator
 from hashlib import sha256
 
 FILES_ROOT = Path("/home/root/.local/share/remarkable/xochitl/")
+SCREEN_WIDTH = 1620
+SCREEN_HEIGHT = 2160
+SCREEN_DPI = 229
+SCALE = 72.0 / SCREEN_DPI
+PAGE_WIDTH_PT = SCREEN_WIDTH * SCALE
+PAGE_HEIGHT_PT = SCREEN_HEIGHT * SCALE
+SVG_VIEWBOX_PATTERN = re.compile(
+    r"^<svg .+ viewBox=\"([\-\d.]+) ([\-\d.]+) ([\-\d.]+) ([\-\d.]+)\">$"
+)
+
 TmpMetadata = namedtuple("Metadata", ["filename", "st_mtime"])
 
 
@@ -217,25 +228,53 @@ def _overlay(existing: PdfReader, rm_page: Path, overlay: Path, page: int) -> No
 
     existing_page = existing.pages[page]
     overlay_page = PdfReader(overlay).pages[0]
-    # TODO: this isn't working :( for most documents
-    # overlay_page.mediabox = _get_mediabox_with_xy_offset_corrected(
-    #     overlay_page, rm_page
-    # )
 
     rotation = existing_page.rotation
     if rotation:
-        overlay_page = overlay_page.rotate(-rotation)
-        overlay_page.transfer_rotation_to_content()
+        existing_page.transfer_rotation_to_content()
+        # overlay_page = overlay_page.rotate(-rotation)
+        # overlay_page.transfer_rotation_to_content()
 
-    overlay_page.scale_to(
-        width=existing_page.mediabox.width, height=existing_page.mediabox.height
+    w_bg, h_bg = existing_page.cropbox.width, existing_page.cropbox.height
+    x_shift, y_shift, w_svg, h_svg = 0, 0, PAGE_WIDTH_PT, PAGE_HEIGHT_PT
+
+    with tempfile.NamedTemporaryFile(suffix=".svg", mode="w") as tmp_svg:
+        rmc.rm_to_svg(rm_page, tmp_svg.name)
+        with open(tmp_svg.name, "r") as f:
+            svg_content = f.readlines()
+            for line in svg_content:
+                res = SVG_VIEWBOX_PATTERN.match(line)
+                if res is not None:
+                    x_shift, y_shift = float(res.group(1)), float(res.group(2))
+                    w_svg, h_svg = float(res.group(3)), float(res.group(4))
+                    break
+
+    width, height = max(w_svg, w_bg), max(h_svg, h_bg)
+    merged_page = PageObject.create_blank_page(width=width, height=height)
+    # compute position of svg and background in the new_page
+    x_svg, y_svg = 0, 0
+    x_bg, y_bg = 0, 0
+    if w_svg > w_bg:
+        x_bg = width / 2 - w_bg / 2 - (w_svg / 2 + x_shift)
+    elif w_svg < w_bg:
+        x_svg = width / 2 - w_svg / 2 + (w_svg / 2 + x_shift)
+    if h_svg > h_bg:
+        y_bg = height - h_bg + y_shift
+    elif h_svg < h_bg:
+        y_svg = height - h_svg - y_shift
+    # merge background_page and svg_pdf_p
+    merged_page.merge_transformed_page(
+        existing_page, Transformation().translate(x_bg, y_bg)
     )
-    overlay_page.merge_page(existing_page, expand=True, over=False)
-    if rotation:
-        overlay_page = overlay_page.rotate(rotation)
-        overlay_page.transfer_rotation_to_content()
+    merged_page.merge_transformed_page(
+        overlay_page, Transformation().translate(x_svg, y_svg)
+    )
+
+    # if rotation:
+    #     overlay_page = overlay_page.rotate(rotation)
+    #     overlay_page.transfer_rotation_to_content()
     writer = PdfWriter()
-    writer.add_page(overlay_page)
+    writer.add_page(merged_page)
     writer.write(overlay)
     writer.close()
 
