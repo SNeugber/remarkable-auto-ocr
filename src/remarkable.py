@@ -8,6 +8,7 @@ import tempfile
 from loguru import logger
 import pandas as pd
 import rmc
+from rmc.exporters.svg import PAGE_HEIGHT_PT, PAGE_WIDTH_PT
 from pypdf import PdfReader, PdfWriter, PageObject, Transformation
 from pypdf.generic import RectangleObject
 
@@ -19,12 +20,6 @@ from collections.abc import Iterator
 from hashlib import sha256
 
 FILES_ROOT = Path("/home/root/.local/share/remarkable/xochitl/")
-SCREEN_WIDTH = 1620
-SCREEN_HEIGHT = 2160
-SCREEN_DPI = 229
-SCALE = 72.0 / SCREEN_DPI
-PAGE_WIDTH_PT = SCREEN_WIDTH * SCALE
-PAGE_HEIGHT_PT = SCREEN_HEIGHT * SCALE
 SVG_VIEWBOX_PATTERN = re.compile(
     r"^<svg .+ viewBox=\"([\-\d.]+) ([\-\d.]+) ([\-\d.]+) ([\-\d.]+)\">$"
 )
@@ -232,8 +227,6 @@ def _overlay(existing: PdfReader, rm_page: Path, overlay: Path, page: int) -> No
     rotation = existing_page.rotation
     if rotation:
         existing_page.transfer_rotation_to_content()
-        # overlay_page = overlay_page.rotate(-rotation)
-        # overlay_page.transfer_rotation_to_content()
 
     w_bg, h_bg = existing_page.cropbox.width, existing_page.cropbox.height
     x_shift, y_shift, w_svg, h_svg = 0, 0, PAGE_WIDTH_PT, PAGE_HEIGHT_PT
@@ -267,12 +260,9 @@ def _overlay(existing: PdfReader, rm_page: Path, overlay: Path, page: int) -> No
         existing_page, Transformation().translate(x_bg, y_bg)
     )
     merged_page.merge_transformed_page(
-        overlay_page, Transformation().translate(x_svg, y_svg)
+        overlay_page, Transformation().translate(x_svg, y_svg), expand=True
     )
 
-    # if rotation:
-    #     overlay_page = overlay_page.rotate(rotation)
-    #     overlay_page.transfer_rotation_to_content()
     writer = PdfWriter()
     writer.add_page(merged_page)
     writer.write(overlay)
