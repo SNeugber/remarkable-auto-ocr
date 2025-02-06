@@ -10,7 +10,6 @@ import pandas as pd
 import rmc
 from rmc.exporters.svg import PAGE_HEIGHT_PT, PAGE_WIDTH_PT
 from pypdf import PdfReader, PdfWriter, PageObject, Transformation
-from pypdf.generic import RectangleObject
 
 import paramiko
 from models import RemarkableFile, RemarkablePage
@@ -267,38 +266,3 @@ def _overlay(existing: PdfReader, rm_page: Path, overlay: Path, page: int) -> No
     writer.add_page(merged_page)
     writer.write(overlay)
     writer.close()
-
-
-def _get_mediabox_with_xy_offset_corrected(page: PageObject, rm_page_path: Path):
-    with open(rm_page_path, "rb") as f:
-        tree = rmc.exporters.svg.read_tree(f)
-    anchor_pos = rmc.exporters.svg.build_anchor_pos(tree.root_text)
-    x_min, _, y_min, _ = rmc.exporters.svg.get_bounding_box(tree.root, anchor_pos)
-    x_offset = _scale_x(x_min)
-    y_offset = _scale_y(y_min)
-
-    return RectangleObject(
-        (
-            x_offset,
-            y_offset,
-            page.mediabox.right - x_offset,
-            page.mediabox.top - y_offset,
-        )
-    )
-
-
-def _scale_x(x: float):
-    X_RES = 1620
-    return _scale(x, X_RES)
-
-
-def _scale_y(x: float):
-    Y_RES = 2160
-    return _scale(x, Y_RES)
-
-
-def _scale(x: float, resolution: float) -> float:
-    SCREEN_DPI = 229
-    SCALE_DPI = 72.0 / SCREEN_DPI
-    SCALE_RES = resolution / SCREEN_DPI
-    return (x * SCALE_DPI) / SCALE_RES
