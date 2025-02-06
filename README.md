@@ -158,6 +158,7 @@ At least on Windows this could work in WSL? But it wouldn't work during developm
 
 1. Build & deploy as service in the background
 1. Reload config every iteration
+1. Render templates
 1. Create relases by building it in CI
 1. Tests
 
