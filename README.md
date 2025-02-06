@@ -174,6 +174,8 @@ To run the project as a docker image as a service:
   wheel in the 2nd stage
 - Run the container as a service, with the relevant stuff mounted, e.g. config directory, paths and such
 - The container should create a `data` volume where it can store renders and such
+- Alternatively: use docker-compose, that should bring it back up after restarts as well:
+  https://stackoverflow.com/a/53569049
 
 ### Document Parsing
 
