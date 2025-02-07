@@ -3,11 +3,11 @@ import time
 
 from loguru import logger
 
-from rao import db, remarkable
-from rao import doc_parsing as dp
-from rao import file_processing_config as fpc
-from rao import file_sync as fs
-from rao.config import Config
+from . import db, remarkable
+from . import doc_parsing as dp
+from . import file_processing_config as fpc
+from . import file_sync as fs
+from .config import Config
 
 logger.add("./logs/debug.log", level="INFO")
 

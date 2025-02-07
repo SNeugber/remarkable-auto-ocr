@@ -1,4 +1,4 @@
-FROM python:3.13
+FROM python:3.13 as build
 
 RUN apt update && apt install -y --no-install-recommends curl ca-certificates
 RUN apt install -y inkscape libcanberra-gtk-module libcanberra-gtk3-module sqlite3
@@ -9,4 +9,15 @@ RUN sh /uv-installer.sh && rm /uv-installer.sh
 
 ENV PATH="/root/.local/bin/:$PATH"
 
-RUN pip install pre-commit
+COPY pyproject.toml pyproject.toml
+COPY uv.lock uv.lock
+COPY README.md README.md
+COPY src/ src/
+
+RUN uv build --wheel
+
+FROM build
+
+RUN find dist/ -name *.whl -exec uv tool install {} ';'
+
+
