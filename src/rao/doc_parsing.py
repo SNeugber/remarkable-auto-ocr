@@ -1,9 +1,11 @@
 import base64
-from file_processing_config import ProcessingConfig
+
 import google.generativeai as genai
-from config import Config
 from loguru import logger
-from models import RemarkableFile, RemarkablePage
+
+from .config import Config
+from .file_processing_config import ProcessingConfig
+from .models import RemarkableFile, RemarkablePage
 
 
 def pages_to_md(

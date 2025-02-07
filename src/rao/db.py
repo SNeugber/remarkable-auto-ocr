@@ -1,10 +1,12 @@
 from collections.abc import Iterable
 from pathlib import Path
-from file_processing_config import ProcessingConfig
+
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
-from models import Metadata, Base, Page, RemarkableFile, RemarkablePage
+
+from .file_processing_config import ProcessingConfig
+from .models import Base, Metadata, Page, RemarkableFile, RemarkablePage
 
 
 def get_engine() -> Engine:

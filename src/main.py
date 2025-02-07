@@ -1,12 +1,13 @@
 import itertools
 import time
+
 from loguru import logger
-import db
-import remarkable
-import doc_parsing as dp
-import file_sync as fs
-from config import Config
-import file_processing_config as fpc
+
+from rao import db, remarkable
+from rao import doc_parsing as dp
+from rao import file_processing_config as fpc
+from rao import file_sync as fs
+from rao.config import Config
 
 logger.add("./logs/debug.log", level="INFO")
 

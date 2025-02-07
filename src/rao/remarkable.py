@@ -1,22 +1,23 @@
-from collections import namedtuple
-from datetime import datetime
-from io import BytesIO
 import json
-from pathlib import Path
 import re
 import tempfile
-from loguru import logger
-import pandas as pd
-import rmc
-from rmc.exporters.svg import PAGE_HEIGHT_PT, PAGE_WIDTH_PT
-from pypdf import PdfReader, PdfWriter, PageObject, Transformation
-
-import paramiko
-from models import RemarkableFile, RemarkablePage
-from config import Config
-from contextlib import contextmanager
+from collections import namedtuple
 from collections.abc import Iterator
+from contextlib import contextmanager
+from datetime import datetime
 from hashlib import sha256
+from io import BytesIO
+from pathlib import Path
+
+import pandas as pd
+import paramiko
+import rmc
+from loguru import logger
+from pypdf import PageObject, PdfReader, PdfWriter, Transformation
+from rmc.exporters.svg import PAGE_HEIGHT_PT, PAGE_WIDTH_PT
+
+from .config import Config
+from .models import RemarkableFile, RemarkablePage
 
 FILES_ROOT = Path("/home/root/.local/share/remarkable/xochitl/")
 SVG_VIEWBOX_PATTERN = re.compile(

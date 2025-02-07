@@ -2,10 +2,12 @@ from dataclasses import dataclass
 from enum import Enum
 from hashlib import sha256
 from pathlib import Path
+
 import pandas as pd
-from config import Config
-from models import RemarkableFile
 from loguru import logger
+
+from .config import Config
+from .models import RemarkableFile
 
 
 @dataclass

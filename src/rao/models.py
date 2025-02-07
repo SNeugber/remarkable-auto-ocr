@@ -1,12 +1,10 @@
-from dataclasses import dataclass
 import datetime
+from dataclasses import dataclass
 from pathlib import Path
-from sqlalchemy import Column, String, DateTime
+
+from sqlalchemy import Column, DateTime, ForeignKey, String
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import ForeignKey
-from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import mapped_column
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 Base = declarative_base()
 

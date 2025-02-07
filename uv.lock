@@ -711,7 +711,7 @@ wheels = [
 [[package]]
 name = "remarkable-auto-ocr"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "google-genai" },
     { name = "google-generativeai" },

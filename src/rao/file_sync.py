@@ -1,14 +1,16 @@
-from collections import defaultdict
-from io import BytesIO
-from pathlib import Path
 import re
 import shutil
 import subprocess
-from models import RemarkableFile, RemarkablePage
-from config import Config
-from pypdf import PdfWriter
-from loguru import logger
+from collections import defaultdict
+from io import BytesIO
+from pathlib import Path
 from urllib.request import pathname2url
+
+from loguru import logger
+from pypdf import PdfWriter
+
+from .config import Config
+from .models import RemarkableFile, RemarkablePage
 
 PAGE_SEPARATOR = re.compile(r"^## Page \d+ - \[[0-9a-f\-]+\]$")
 

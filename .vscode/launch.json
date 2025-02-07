@@ -6,7 +6,7 @@
             "type": "debugpy",
             "request": "launch",
             "console": "integratedTerminal",
-            "program": "${workspaceFolder}/src/main.py",
+            "program": "${workspaceFolder}/src/rao/main.py",
             "justMyCode": "false",
             "python": "${workspaceFolder}/.venv/bin/python",
             "preLaunchTask": "uv-sync",
