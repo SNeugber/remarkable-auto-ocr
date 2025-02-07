@@ -136,6 +136,31 @@ E.g. in `devcontainer.json`:
 	],
 ```
 
+In order to run this with `docker compose`, first create a docker volume:
+
+```sh
+docker volume create \
+  --driver local \
+  -o o=bind \
+  -o type=none \
+  -o device="/run/user/1000/gvfs/google-drive:host=my_host.com,user=my.username/" \
+  gdrive
+```
+
+Then add a volume configuration to `docker-compose.yml`:
+
+```yaml
+services:
+  rao:
+    ...
+    volumes:
+      - gdrive:/data/gdrive
+
+volumes:
+  gdrive:
+    external: true
+```
+
 ## Known Issues
 
 ### PDF overlays from Paper Pro

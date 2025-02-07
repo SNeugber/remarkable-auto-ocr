@@ -9,7 +9,7 @@
             "program": "${workspaceFolder}/src/rao/main.py",
             "justMyCode": "false",
             "python": "${workspaceFolder}/.venv/bin/python",
-            "preLaunchTask": "uv-sync",
+            "preLaunchTask": "uv-sync"
         },
         {
             "name": "Exec Current File",
@@ -19,7 +19,7 @@
             "program": "${file}",
             "justMyCode": "false",
             "python": "${workspaceFolder}/.venv/bin/python",
-            "preLaunchTask": "uv-sync",
+            "preLaunchTask": "uv-sync"
         },
     ]
 }

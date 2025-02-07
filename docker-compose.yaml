@@ -1,7 +1,0 @@
-services:
-  rao:
-    build:
-      context: .
-      dockerfile: deploy.dockerfile
-    image: rao-runner
-    entrypoint: rm-auto-ocr
