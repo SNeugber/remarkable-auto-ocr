@@ -12,4 +12,8 @@ services:
 
 volumes:
   gdrive:
-    external: true
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: "/run/user/1000/gvfs/google-drive:host=gmail.com,user=samuel.neugber/"

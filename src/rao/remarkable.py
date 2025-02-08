@@ -144,17 +144,25 @@ def render_pages(
         sftp.close()
         return []
 
-    pages = content.get("cPages", {}).get("pages", [])
+    pages = []
+    if "cPages" in content:
+        pages = content.get("cPages", {}).get("pages", [])
+        page_ids = [page["id"] for page in pages]
+        existing_pdf_page_indexes = (
+            # Page indexes in the original pdf, if this is an annotated PDF
+            # "None" values indicate new remarkable pages added to the PDF
+            [page.get("redir", {}).get("value", None) for page in pages]
+            if existing_pdf
+            else []
+        )
+    else:
+        page_ids = content["pages"]
+        existing_pdf_page_indexes = list(range(len(page_ids))) if existing_pdf else []
+
     page_paths = [
-        FILES_ROOT / metadata_file.uuid / f"{page['id']}.rm" for page in pages
+        FILES_ROOT / metadata_file.uuid / f"{page_id}.rm" for page_id in page_ids
     ]
-    existing_pdf_page_indexes = (
-        # Page indexes in the original pdf, if this is an annotated PDF
-        # "None" values indicate new remarkable pages added to the PDF
-        [page.get("redir", {}).get("value", None) for page in pages]
-        if existing_pdf
-        else []
-    )
+
     templates_per_page = {
         page["id"]: page.get("template", {}).get("value", "Blank") for page in pages
     }
