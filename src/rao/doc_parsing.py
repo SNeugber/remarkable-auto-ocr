@@ -41,7 +41,7 @@ def _pdf2md(pdf_data: bytes, prompt: str) -> str:
     genai.configure(api_key=Config.google_api_key)
     pdf_enc = base64.standard_b64encode(pdf_data).decode("utf-8")
 
-    model = genai.GenerativeModel("gemini-1.5-flash")
+    model = genai.GenerativeModel(Config.model)
     try:
         response = model.generate_content(
             [{"mime_type": "application/pdf", "data": pdf_enc}, prompt]

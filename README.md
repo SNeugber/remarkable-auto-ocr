@@ -87,6 +87,7 @@ blacklist_path = "./data/blacklist.csv"   # see below
 git_repo_path = ""                        # see below
 gdrive_folder_path = ""                   # see below
 prompts_dir = "./data/prompts"            # see below
+model: str = "gemini-1.5-flash"           # the model to use for markdown conversion
 default_prompt = "Turn this document into markdown"
 ```
 
