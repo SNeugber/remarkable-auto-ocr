@@ -12,6 +12,7 @@ dependencies = [
     "pandas>=2.2.3",
     "paramiko>=3.5.0",
     "pypdf>=5.2.0",
+    "remarks",
     "rmrl>=0.2.1",
     "setuptools>=75.8.0",
     "shapely>=2.0.7",
@@ -37,6 +38,9 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/rao"]
+
+[tool.uv.sources]
+remarks = { git = "https://github.com/SNeugber/remarks", rev = "add_template_support" }
 
 
 [project.scripts]
