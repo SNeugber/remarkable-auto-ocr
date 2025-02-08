@@ -1,0 +1,15 @@
+services:
+  rao:
+    build:
+      context: .
+      dockerfile: deploy.dockerfile
+    image: rao-runner
+    entrypoint: rm-auto-ocr
+    volumes:
+      - ${HOME}/.ssh:/root/.ssh
+      - config.toml:/root/config.toml
+      - gdrive:/data/gdrive
+
+volumes:
+  gdrive:
+    external: true
