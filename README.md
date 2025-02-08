@@ -6,20 +6,24 @@ This is a utility service intended to automatically sync and convert handwritten
 1. Converts files to pdf using [rmc](https://github.com/ricklupton/rmc)
 1. Converts those files to markdown using the [Google AI Studio](https://aistudio.google.com/)
 
-## Dev Setup
+## Setup
 
-1. Install VSCode
-1. Install devcontainers extension
+1. [Install Docker](https://docs.docker.com/engine/install/)
 1. Set up your tablet for [ssh key authentication](https://remarkable.guide/guide/access/ssh.html).
 1. Create a whitelist, blacklist, and custom prompts: [Which Files to Process](#which-files-to-process)
 1. Create a Google AI Studio API key: [Google AI Studio](https://aistudio.google.com/apikey)
-1. Create a file `env.toml` in your home directory: [Config](#config)
+1. Create a file `config.toml` in the project root directory: [Config](#config)
+1. Set up a repository & google drive directory to save the data to:
+   [Saving Data to External Resources](#saving-data-to-external-resources)
+1. Update [docker-compose.yml](./docker-compose.yml) to mount your paths
+1. Start the service: `docker compose up --build rao`
+
+## Dev Setup
+
+1. [Install VSCode](https://code.visualstudio.com/download)
+1. Install the [devcontainers extension](https://code.visualstudio.com/docs/devcontainers/containers)
 1. Launch project in the dev container
 1. Run app through vscode using the configurations in `launch.json`
-
-## User Setup
-
-TBD...
 
 ## Config
 
@@ -55,12 +59,12 @@ The whitelist is a list of paths that select which files to process. This can be
 specific file paths. It should be structured as follows:
 
 ```markdown
-| path   | prompt_path    | pdf_only |
-|--------|----------------|----------|
-| A/B    | prompt_ab.txt  | False    |
-| A/B/C  | prompt_abc.txt | False    |
-| C      |                | True     |
-| D      | D/prompt.txt   | True     |
+| path   | prompt_path    | pdf_only | force_reprocess |
+|--------|----------------|----------|-----------------|
+| A/B    | prompt_ab.txt  | False    |                 |
+| A/B/C  | prompt_abc.txt | False    |                 |
+| C      |                | True     |                 |
+| D      | D/prompt.txt   | True     |                 |
 ```
 
 - The `path` column specifies which files on the tablet to process.
@@ -126,40 +130,29 @@ For example:
 You just need to replace `<UID>` with your user id and `<TargetDir>` with the name of the folder in google drive you
 want to save the pdfs in.
 
-⚠️ When running in docker, ensure that this folder is mounted! ⚠️
+⚠️ Since the app is running in a container, we need to ensure that this folder is mounted: ⚠️
 
-E.g. in `devcontainer.json`:
+1. Due to a limitation in `docker compose`, we first need to create a dedicated docker volume:
+   ```sh
+   docker volume create \
+   --driver local \
+   -o o=bind \
+   -o type=none \
+   -o device="/run/user/1000/gvfs/google-drive:host=my_host.com,user=my.username/" \
+   gdrive
+   ```
+1. Then we can mount the volume in `docker-compose.yml`/`dev.docker-compose.yml`:
+   ```yaml
+   services:
+   rao:
+      ...
+      volumes:
+         - gdrive:/data/gdrive
 
-```json
-	"mounts": [
-		"\"source=/run/user/1000/gvfs/google-drive:host=gmail.com,user=my.username/\",target=/data/gdrive,type=bind"
-	],
-```
-
-In order to run this with `docker compose`, first create a docker volume:
-
-```sh
-docker volume create \
-  --driver local \
-  -o o=bind \
-  -o type=none \
-  -o device="/run/user/1000/gvfs/google-drive:host=my_host.com,user=my.username/" \
-  gdrive
-```
-
-Then add a volume configuration to `docker-compose.yml`:
-
-```yaml
-services:
-  rao:
-    ...
-    volumes:
-      - gdrive:/data/gdrive
-
-volumes:
-  gdrive:
-    external: true
-```
+   volumes:
+   gdrive:
+      external: true
+   ```
 
 ## Known Issues
 

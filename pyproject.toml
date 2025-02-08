@@ -9,7 +9,6 @@ dependencies = [
     "google-genai>=0.6.0",
     "google-generativeai>=0.8.4",
     "loguru>=0.7.3",
-    "mdformat>=0.7.21",
     "pandas>=2.2.3",
     "paramiko>=3.5.0",
     "pypdf>=5.2.0",
@@ -22,6 +21,11 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "mdformat-black>=0.1.1",
+    "mdformat-gfm>=0.4.1",
+    "mdformat-tables>=1.0.0",
+    "mdformat-toc>=0.3.0",
+    "mdformat>=0.7.22",
     "ruff>=0.9.1",
 ]
 

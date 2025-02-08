@@ -28,7 +28,7 @@ class _Config:
 
 def _load():
     for path in [
-        Path.home() / ".config" / "remarkable-auto-ocr" / "config.toml",
+        Path.home() / "config.toml",
         Path(__file__).parent.parent / "config.toml",
     ]:
         if not path.exists():
