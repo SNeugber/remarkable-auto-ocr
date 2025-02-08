@@ -1,4 +1,4 @@
-# Remarkable Auto OCR<a name="remarkable-auto-ocr"></a>
+# Remarkable Auto OCR
 
 This is a utility service intended to automatically sync and convert handwritten Remarkable documents:
 
@@ -6,7 +6,16 @@ This is a utility service intended to automatically sync and convert handwritten
 1. Converts files to pdf using [rmc](https://github.com/ricklupton/rmc)
 1. Converts those files to markdown using the [Google AI Studio](https://aistudio.google.com/)
 
-<!-- mdformat-toc start --slug=github --maxlevel=6 --minlevel=2 -->
+# Limitations
+
+- As of right now, this is more of a POC that I'm happy with for my own workflow. It could do with tests and cleaning
+  up.
+- Since I own a Paper Pro tablet, that is what everything is tested with and geared towards right now. I'm planning on
+  making it more generic in due course...
+
+# Contents
+
+<!-- mdformat-toc start --slug=github --no-anchors --maxlevel=6 --minlevel=2 -->
 
 - [Setup](#setup)
 - [Dev Setup](#dev-setup)
@@ -27,7 +36,7 @@ This is a utility service intended to automatically sync and convert handwritten
 
 <!-- mdformat-toc end -->
 
-## Setup<a name="setup"></a>
+## Setup
 
 1. [Install Docker](https://docs.docker.com/engine/install/)
 1. Set up your tablet for [ssh key authentication](https://remarkable.guide/guide/access/ssh.html).
@@ -42,7 +51,7 @@ This is a utility service intended to automatically sync and convert handwritten
    - The docker volume for the google drive integration
 1. Start the service: `docker compose up --build rao`
 
-## Dev Setup<a name="dev-setup"></a>
+## Dev Setup
 
 1. [Install VSCode](https://code.visualstudio.com/download)
 1. Install the [devcontainers extension](https://code.visualstudio.com/docs/devcontainers/containers)
@@ -50,7 +59,7 @@ This is a utility service intended to automatically sync and convert handwritten
 1. Open project in the dev container
 1. Run app through vscode using the configurations in `launch.json`
 
-## Service Loop<a name="service-loop"></a>
+## Service Loop
 
 The app runs every `Config.check_interval` seconds. At each iteration it:
 
@@ -62,7 +71,7 @@ The app runs every `Config.check_interval` seconds. At each iteration it:
 1. saves the `.pdf`/`.md` files (and pushes the files to the git repo and/or google drive folder, if set)
 1. updates the database to mark the files as processed
 
-## Config<a name="config"></a>
+## Config
 
 The config file should be in the home directory under `env.toml` and contain the following keys:
 
@@ -85,14 +94,14 @@ default_prompt = "Turn this document into markdown"
 
 Further configuration parameters can be found in [config.py](/src/config.py).
 
-## Which Files To Process<a name="which-files-to-process"></a>
+## Which Files To Process
 
 To select which files should be processed and how to do so, you can create two files: `whitelist.csv` and
 `blacklist.csv`.
 
 ⚠️ **Without a `whitelist.csv`, all files on the tablet will be processed!**
 
-### whitelist.csv<a name="whitelistcsv"></a>
+### whitelist.csv
 
 The whitelist is a list of paths that select which files to process. This can be paths to entire directories, or
 specific file paths. It should be structured as follows:
@@ -121,7 +130,7 @@ other files in `A/B/` will use the prompt in `prompt_ab.txt`
 ⚠️ **If a prompt file referenced in `whitelist.csv` can not be found, all files that match this path in the whitelist
 will be skipped!** ⚠️
 
-### blacklist.csv<a name="blacklistcsv"></a>
+### blacklist.csv
 
 The blacklist is a list of paths that matched in the whitelist, should be ignored for processing, e.g. if only one file
 in an entire directory should be ignored.
@@ -133,29 +142,29 @@ in an entire directory should be ignored.
 | A/B/F  |
 ```
 
-## Custom Prompts<a name="custom-prompts"></a>
+## Custom Prompts
 
 Custom prompts should be stored as text files relative to the `prompts_dir` set in the [config](#config).
 
-##### *example_prompt.txt*<a name="example_prompttxt"></a>
+##### *example_prompt.txt*
 
 ```txt
 Render this document as a markdown table. Ensure that the table contains columns `A`, `B`, and `C`.
 Do not include any text other than the raw markdown in the output.
 ```
 
-## Saving Data to External Resources<a name="saving-data-to-external-resources"></a>
+## Saving Data to External Resources
 
 The config options `md_repo_path` and `pdf_copy_path` allow for exporting the generated markdown/pdf files:
 
-### `md_repo_path`<a name="md_repo_path"></a>
+### `md_repo_path`
 
 This path should be set to the root directory of a git repo to push the generated markdown files to. It will
 create/update a `README.md` file as well as a `documents` subdirectory. The markdown files will be copied to the
 `documents` subdirectory, in the same directory structure as found on the tablet. When the copying is complete, it will
 commit and push the files/changes.
 
-### `pdf_copy_path`<a name="pdf_copy_path"></a>
+### `pdf_copy_path`
 
 This path should be set to the directory where all generated pdfs should be copied to. This is used primarily for
 auto-syncing to e.g. google drive. For google drive integration on ubuntu, this path should be in the format described
@@ -192,25 +201,25 @@ volumes:
          device: "/run/user/1000/gvfs/google-drive:host=gmail.com,user=samuel.neugber/"
 ```
 
-## Known Issues<a name="known-issues"></a>
+## Known Issues
 
-### PDF overlays from Paper Pro<a name="pdf-overlays-from-paper-pro"></a>
+### PDF overlays from Paper Pro
 
-[rmc](https://github.com/ricklupton/rmc) isn't quite ready for data from the paper pro tablet. It also crops tightly
-around the text, instead of keeping the margins alive, so text annotations which are overlayed on top of PDFs don't end
-up in the right spot :(
+[rmc](https://github.com/ricklupton/rmc) isn't quite ready for data from the paper pro tablet I think. Annotated PDFs
+and template background aren't rendering right as of now :(
 
-### Finding the tablet IP automatically<a name="finding-the-tablet-ip-automatically"></a>
+### Finding the tablet IP automatically
 
 I'd ideally like to find the IP of the tablet automatically using the MAC address and `arp-scan`. But I'm using rootless
 docker, and in there I can't run `arp-scan`. So either I use rootfull docker for deploying the final package, or I have
 to make certain apt packages mandatory during installation and limit the app to run in ubuntu/linux.
 
-At least on Windows this could work in WSL? But it wouldn't work during development...
+## TODO
 
-## TODO<a name="todo"></a>
-
+1. Disable template rendering for now
 1. Tests & Code Cleanup
+1. Fix template/PDF rendering
+1. Update dependency back to original rmc repo when it's ready for the paper pro
 
 # Acknowledgements
 
