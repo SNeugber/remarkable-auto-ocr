@@ -12,6 +12,8 @@ from pathlib import Path
 import pandas as pd
 import paramiko
 import rmc
+import rmc.exporters
+import rmc.exporters.svg
 from loguru import logger
 from pypdf import PageObject, PdfReader, PdfWriter, Transformation
 from rmc.exporters.svg import PAGE_HEIGHT_PT, PAGE_WIDTH_PT
@@ -20,6 +22,7 @@ from .config import Config
 from .models import RemarkableFile, RemarkablePage
 
 FILES_ROOT = Path("/home/root/.local/share/remarkable/xochitl/")
+TEMPLATES_ROOT = Path("/usr/share/remarkable/templates/")
 SVG_VIEWBOX_PATTERN = re.compile(
     r"^<svg .+ viewBox=\"([\-\d.]+) ([\-\d.]+) ([\-\d.]+) ([\-\d.]+)\">$"
 )
@@ -133,7 +136,6 @@ def render_pages(
     try:
         content_file = FILES_ROOT / (metadata_file.uuid + ".content")
         content = json.loads(sftp.open(str(content_file)).read())
-
         if metadata_file.has_pdf:
             existing_pdf_path = FILES_ROOT / (metadata_file.uuid + ".pdf")
             existing_pdf = PdfReader(BytesIO(sftp.open(str(existing_pdf_path)).read()))
@@ -153,14 +155,32 @@ def render_pages(
         if existing_pdf
         else []
     )
+    templates_per_page = {
+        page["id"]: page.get("template", {}).get("value", "Blank") for page in pages
+    }
+    templates_per_page = {
+        page: template
+        for page, template in templates_per_page.items()
+        if template != "Blank"
+    }
 
     page_data = []
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
         for i, page_path in enumerate(page_paths):
             blank_page = False
+            template_name = templates_per_page.get(page_path.stem, None)
+            template_path = None
             try:
                 sftp.get(str(page_path), str(tmpdir / page_path.name))
+                if template_name is not None:
+                    template_name += ".svg"
+                    template_path = tmpdir / template_name
+                    if not (template_path).exists():
+                        sftp.get(
+                            str(TEMPLATES_ROOT / template_name),
+                            str(template_path),
+                        )
             except FileNotFoundError:
                 if existing_pdf and existing_pdf_page_indexes[i] is not None:
                     blank_page = True
@@ -174,13 +194,16 @@ def render_pages(
                 writer.write(pdf_path)
                 writer.close()
             else:
-                rmc.rm_to_pdf(tmpdir / page_path.name, pdf_path)
+                page_dims = _page_to_pdf(
+                    tmpdir / page_path.name, pdf_path, template_path
+                )
                 if existing_pdf and existing_pdf_page_indexes[i] is not None:
                     _overlay(
                         existing=existing_pdf,
                         rm_page=tmpdir / page_path.name,
                         overlay=pdf_path,
                         page=existing_pdf_page_indexes[i],
+                        page_dims=page_dims,
                     )
             with open(pdf_path, "rb") as f:
                 data = f.read()
@@ -198,7 +221,13 @@ def render_pages(
     return page_data
 
 
-def _overlay(existing: PdfReader, rm_page: Path, overlay: Path, page: int) -> None:
+def _overlay(
+    existing: PdfReader,
+    rm_page: Path,
+    overlay: Path,
+    page: int,
+    page_dims: tuple[float, float, float, float],
+) -> None:
     """
     This function is intended to overlay annotations over existing PDF files.
 
@@ -229,19 +258,7 @@ def _overlay(existing: PdfReader, rm_page: Path, overlay: Path, page: int) -> No
         existing_page.transfer_rotation_to_content()
 
     w_bg, h_bg = existing_page.cropbox.width, existing_page.cropbox.height
-    x_shift, y_shift, w_svg, h_svg = 0, 0, PAGE_WIDTH_PT, PAGE_HEIGHT_PT
-
-    with tempfile.NamedTemporaryFile(suffix=".svg", mode="w") as tmp_svg:
-        rmc.rm_to_svg(rm_page, tmp_svg.name)
-        with open(tmp_svg.name, "r") as f:
-            svg_content = f.readlines()
-            for line in svg_content:
-                res = SVG_VIEWBOX_PATTERN.match(line)
-                if res is not None:
-                    x_shift, y_shift = float(res.group(1)), float(res.group(2))
-                    w_svg, h_svg = float(res.group(3)), float(res.group(4))
-                    break
-
+    x_shift, y_shift, w_svg, h_svg = page_dims
     width, height = max(w_svg, w_bg), max(h_svg, h_bg)
     merged_page = PageObject.create_blank_page(width=width, height=height)
     # compute position of svg and background in the new_page
@@ -267,3 +284,23 @@ def _overlay(existing: PdfReader, rm_page: Path, overlay: Path, page: int) -> No
     writer.add_page(merged_page)
     writer.write(overlay)
     writer.close()
+
+
+def _page_to_pdf(rm_path: Path, pdf_path: Path, template_path: Path | None):
+    with tempfile.NamedTemporaryFile(suffix=".svg", mode="w") as tmp_svg:
+        with open(rm_path, "rb") as rm_file:
+            tree = rmc.exporters.svg.read_tree(rm_file)
+
+        rmc.exporters.svg.tree_to_svg(tree, tmp_svg, include_template=template_path)
+        x_shift, y_shift, w_svg, h_svg = 0, 0, PAGE_WIDTH_PT, PAGE_HEIGHT_PT
+        with open(tmp_svg.name, "r") as f:
+            svg_content = f.readlines()
+            for line in svg_content:
+                res = SVG_VIEWBOX_PATTERN.match(line)
+                if res is not None:
+                    x_shift, y_shift = float(res.group(1)), float(res.group(2))
+                    w_svg, h_svg = float(res.group(3)), float(res.group(4))
+                    break
+        with open(tmp_svg.name, "r") as svg, open(pdf_path, "wb") as pdf:
+            rmc.exporters.pdf.svg_to_pdf(svg, pdf)
+    return x_shift, y_shift, w_svg, h_svg
