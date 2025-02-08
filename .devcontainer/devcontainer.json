@@ -4,7 +4,7 @@
 	"name": "Dev Dockerfile",
 	"dockerComposeFile": ["../dev.docker-compose.yml"],
 	"service": "rao-dev",
-	"workspaceFolder": "/workspaces/${workspaceFolder}",
+	"workspaceFolder": "/workspaces/remarkable-auto-ocr",
 	"shutdownAction": "stopCompose",
 	"customizations": {
 		"vscode": {

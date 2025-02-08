@@ -3,7 +3,7 @@ name = "remarkable-auto-ocr"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
     "click>=8.1.8",
     "google-genai>=0.6.0",
@@ -12,9 +12,9 @@ dependencies = [
     "pandas>=2.2.3",
     "paramiko>=3.5.0",
     "pypdf>=5.2.0",
-    "rmc",
     "rmrl>=0.2.1",
     "setuptools>=75.8.0",
+    "shapely>=2.0.7",
     "sqlalchemy>=2.0.37",
 ]
 
@@ -41,7 +41,3 @@ packages = ["src/rao"]
 
 [project.scripts]
 rm-auto-ocr = "rao.main:main"
-
-
-[tool.uv.sources]
-rmc = { git = "https://github.com/SNeugber/rmc.git", rev = "9e89abc5495cdfb505030069bf2588cf975e761c" }
