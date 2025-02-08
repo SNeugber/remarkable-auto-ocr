@@ -1,5 +1,6 @@
 import json
 import re
+import stat
 import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -10,12 +11,10 @@ from pathlib import Path
 
 import pandas as pd
 import paramiko
-import rmc
-import rmc.exporters
-import rmc.exporters.svg
 from loguru import logger
-from pypdf import PageObject, PdfReader, PdfWriter, Transformation
-from rmc.exporters.svg import PAGE_HEIGHT_PT, PAGE_WIDTH_PT
+from paramiko import SFTPClient
+from pypdf import PageObject, PdfReader, PdfWriter
+from remarks.remarks import process_document
 
 from .config import Config
 from .models import RemarkableFile, RemarkablePage
@@ -131,183 +130,84 @@ def render_pages(
     client: paramiko.SSHClient, metadata_file: RemarkableFile
 ) -> list[RemarkablePage]:
     sftp = client.open_sftp()
-    existing_pdf = None
-    try:
-        content_file = FILES_ROOT / (metadata_file.uuid + ".content")
-        content = json.loads(sftp.open(str(content_file)).read())
-        if metadata_file.has_pdf:
-            existing_pdf_path = FILES_ROOT / (metadata_file.uuid + ".pdf")
-            existing_pdf = PdfReader(BytesIO(sftp.open(str(existing_pdf_path)).read()))
-    except IOError as e:
-        logger.info(f"No content file for {metadata_file.uuid}.\n{e}")
-        sftp.close()
-        return []
-
-    pages = []
-    if "cPages" in content:
-        pages = content.get("cPages", {}).get("pages", [])
-        page_ids = [page["id"] for page in pages]
-        existing_pdf_page_indexes = (
-            # Page indexes in the original pdf, if this is an annotated PDF
-            # "None" values indicate new remarkable pages added to the PDF
-            [page.get("redir", {}).get("value", None) for page in pages]
-            if existing_pdf
-            else []
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmpdir = Path(tmpdir)
+        files_dir = tmpdir / "files"
+        files_dir.mkdir()
+        files = _download_files(metadata_file, sftp, files_dir)
+        content_file = _load_content_file(
+            files.get(f"{metadata_file.uuid}.content", None)
         )
-    else:
-        page_ids = content["pages"]
-        existing_pdf_page_indexes = list(range(len(page_ids))) if existing_pdf else []
+        if not content_file:
+            logger.info(f"No content file for {metadata_file.uuid}")
+            sftp.close()
+            return []
+        pages, templates_per_page = _load_pages_and_templates(content_file)
+        output_path = tmpdir / "rendered"
+        process_document(
+            metadata_path=files[f"{metadata_file.uuid}.metadata"],
+            out_path=output_path,
+            templates_per_page=templates_per_page,
+        )
+        pdf = PdfReader(output_path.with_name(output_path.stem + " _remarks.pdf"))
+    sftp.close()
 
-    page_paths = [
-        FILES_ROOT / metadata_file.uuid / f"{page_id}.rm" for page_id in page_ids
+    pdf_bytes = [_pdf_page_to_bytes(page) for page in pdf.pages]
+    return [
+        RemarkablePage(
+            page_idx=i,
+            parent=metadata_file,
+            uuid=page["id"],
+            pdf_data=page_data,
+            hash=sha256(page_data).hexdigest(),
+        )
+        for i, (page_data, page) in enumerate(zip(pdf_bytes, pages))
     ]
 
+
+def _download_files(
+    metadata_file: RemarkableFile, sftp: SFTPClient, output_dir: Path
+) -> dict:
+    paths_to_copy = [str(FILES_ROOT / file) for file in metadata_file.other_paths] + [
+        FILES_ROOT / f"{metadata_file.uuid}.metadata"
+    ]
+    file_paths = {}
+    while paths_to_copy:
+        remote_path = paths_to_copy.pop(0)
+        if stat.S_ISDIR(sftp.stat(remote_path).st_mode):
+            paths_to_copy += sftp.listdir(remote_path)
+        else:
+            target_path = output_dir / Path(remote_path).relative_to(FILES_ROOT)
+            target_path.parent.mkdir(exist_ok=True, parents=True)
+            sftp.get(remote_path, str(target_path))
+            file_paths[target_path.name] = target_path
+    return file_paths
+
+
+def _load_content_file(content_file_path: Path | None) -> dict:
+    if content_file_path is None:
+        return {}
+    return json.loads(content_file_path.read_text())
+
+
+def _load_pages_and_templates(content_file: dict) -> tuple[dict, dict]:
+    if "cPages" in content_file:
+        pages = content_file.get("cPages", {}).get("pages", [])
+    else:
+        pages = {"id": page for page in content_file["pages"]}
     templates_per_page = {
         page["id"]: page.get("template", {}).get("value", "Blank") for page in pages
     }
     templates_per_page = {
-        page: template
-        for page, template in templates_per_page.items()
+        page_id: TEMPLATES_ROOT / template
+        for page_id, template in templates_per_page.items()
         if template != "Blank"
     }
-
-    page_data = []
-    with tempfile.TemporaryDirectory() as tmpdir:
-        tmpdir = Path(tmpdir)
-        for i, page_path in enumerate(page_paths):
-            blank_page = False
-            template_name = templates_per_page.get(page_path.stem, None)
-            template_path = None
-            try:
-                sftp.get(str(page_path), str(tmpdir / page_path.name))
-                if template_name is not None:
-                    template_name += ".svg"
-                    template_path = tmpdir / template_name
-                    if not (template_path).exists():
-                        sftp.get(
-                            str(TEMPLATES_ROOT / template_name),
-                            str(template_path),
-                        )
-            except FileNotFoundError:
-                if existing_pdf and existing_pdf_page_indexes[i] is not None:
-                    blank_page = True
-                else:
-                    logger.warning(f"Page does not exist {page_path}")
-                    continue
-            pdf_path = tmpdir / page_path.with_suffix(".pdf").name
-            if blank_page:
-                writer = PdfWriter()
-                writer.add_page(existing_pdf.pages[existing_pdf_page_indexes[i]])
-                writer.write(pdf_path)
-                writer.close()
-            else:
-                page_dims = _page_to_pdf(
-                    tmpdir / page_path.name, pdf_path, template_path
-                )
-                if existing_pdf and existing_pdf_page_indexes[i] is not None:
-                    _overlay(
-                        existing=existing_pdf,
-                        rm_page=tmpdir / page_path.name,
-                        overlay=pdf_path,
-                        page=existing_pdf_page_indexes[i],
-                        page_dims=page_dims,
-                    )
-            with open(pdf_path, "rb") as f:
-                data = f.read()
-                page_data.append(
-                    RemarkablePage(
-                        page_idx=i,
-                        parent=metadata_file,
-                        uuid=page_path.stem,
-                        pdf_data=data,
-                        hash=sha256(data).hexdigest(),
-                    )
-                )
-
-    sftp.close()
-    return page_data
+    return pages, templates_per_page
 
 
-def _overlay(
-    existing: PdfReader,
-    rm_page: Path,
-    overlay: Path,
-    page: int,
-    page_dims: tuple[float, float, float, float],
-) -> None:
-    """
-    This function is intended to overlay annotations over existing PDF files.
-
-    ⚠️ It is kind of broken, only works like 99% ish ⚠️
-    The problem is that the pdf rendered by rmc is still using hardcoded
-    values for the remarkable 2, whereas the paper pro has a different
-    screen size/resolution/dpi.
-
-    rmc also renders pdf cropped tight around the content, so we have to offset & scale them
-    to match the original pdf's dimensions.
-
-    Lastly merging protated dfs is causing issues, because it looks like the rmc-rendered pdf
-    doesn't have the rotation set (correctly?), so when overlaying them naively one of them isn't
-    rotated.
-
-    Hence we basically:
-    1. fix offset
-    2. un-rotate
-    3. scale
-    4. re-rotate
-    """
-
-    existing_page = existing.pages[page]
-    overlay_page = PdfReader(overlay).pages[0]
-
-    rotation = existing_page.rotation
-    if rotation:
-        existing_page.transfer_rotation_to_content()
-
-    w_bg, h_bg = existing_page.cropbox.width, existing_page.cropbox.height
-    x_shift, y_shift, w_svg, h_svg = page_dims
-    width, height = max(w_svg, w_bg), max(h_svg, h_bg)
-    merged_page = PageObject.create_blank_page(width=width, height=height)
-    # compute position of svg and background in the new_page
-    x_svg, y_svg = 0, 0
-    x_bg, y_bg = 0, 0
-    if w_svg > w_bg:
-        x_bg = width / 2 - w_bg / 2 - (w_svg / 2 + x_shift)
-    elif w_svg < w_bg:
-        x_svg = width / 2 - w_svg / 2 + (w_svg / 2 + x_shift)
-    if h_svg > h_bg:
-        y_bg = height - h_bg + y_shift
-    elif h_svg < h_bg:
-        y_svg = height - h_svg - y_shift
-    # merge background_page and svg_pdf_p
-    merged_page.merge_transformed_page(
-        existing_page, Transformation().translate(x_bg, y_bg)
-    )
-    merged_page.merge_transformed_page(
-        overlay_page, Transformation().translate(x_svg, y_svg), expand=True
-    )
-
+def _pdf_page_to_bytes(page: PageObject) -> bytes:
     writer = PdfWriter()
-    writer.add_page(merged_page)
-    writer.write(overlay)
-    writer.close()
-
-
-def _page_to_pdf(rm_path: Path, pdf_path: Path, template_path: Path | None):
-    with tempfile.NamedTemporaryFile(suffix=".svg", mode="w") as tmp_svg:
-        with open(rm_path, "rb") as rm_file:
-            tree = rmc.exporters.svg.read_tree(rm_file)
-
-        rmc.exporters.svg.tree_to_svg(tree, tmp_svg, include_template=template_path)
-        x_shift, y_shift, w_svg, h_svg = 0, 0, PAGE_WIDTH_PT, PAGE_HEIGHT_PT
-        with open(tmp_svg.name, "r") as f:
-            svg_content = f.readlines()
-            for line in svg_content:
-                res = SVG_VIEWBOX_PATTERN.match(line)
-                if res is not None:
-                    x_shift, y_shift = float(res.group(1)), float(res.group(2))
-                    w_svg, h_svg = float(res.group(3)), float(res.group(4))
-                    break
-        with open(tmp_svg.name, "r") as svg, open(pdf_path, "wb") as pdf:
-            rmc.exporters.pdf.svg_to_pdf(svg, pdf)
-    return x_shift, y_shift, w_svg, h_svg
+    with BytesIO() as bytes_stream:
+        writer.write(bytes_stream)
+        return bytes_stream.getvalue()
