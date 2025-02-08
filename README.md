@@ -191,5 +191,4 @@ At least on Windows this could work in WSL? But it wouldn't work during developm
 
 ## TODO
 
-1. Render templates
-1. Tests
+1. Tests & Code Cleanup
