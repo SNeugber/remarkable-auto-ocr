@@ -60,6 +60,8 @@ prompts_dir = "./data/prompts"            # see below
 default_prompt = "Turn this document into markdown"
 ```
 
+⚠️ **Paths must be relative to their mount paths in the `[dev.]docker-compose.yml` file!** ⚠️
+
 Further configuration parameters can be found in [config.py](/src/config.py).
 
 ## Which Files To Process
