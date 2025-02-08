@@ -24,6 +24,8 @@ TEMPLATES_ROOT = Path("/usr/share/remarkable/templates/")
 SVG_VIEWBOX_PATTERN = re.compile(
     r"^<svg .+ viewBox=\"([\-\d.]+) ([\-\d.]+) ([\-\d.]+) ([\-\d.]+)\">$"
 )
+TEMPLATE_CACHE_DIR = Path("./data/templates_cache")
+RENDER_TEMPLATES = False  # Currently not properly supported in RMC
 
 
 @contextmanager
@@ -88,6 +90,7 @@ def _load_metadata_files(
             files_df.filename.str.contains(uuid)
             & (files_df.filename.str.contains("."))
             & (~files_df.filename.str.contains(".metadata"))
+            & (~files_df.filename.str.contains(".thumbnails"))
         ].filename.to_list()
         meta_content = json.loads(sftp.open(str(FILES_ROOT / meta_filename)).read())
         meta_file_contents[uuid] = {
@@ -129,6 +132,7 @@ def _load_file_paths(
 def render_pages(
     client: paramiko.SSHClient, metadata_file: RemarkableFile
 ) -> list[RemarkablePage]:
+    TEMPLATE_CACHE_DIR.mkdir(exist_ok=True, parents=True)
     sftp = client.open_sftp()
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
@@ -143,6 +147,10 @@ def render_pages(
             sftp.close()
             return []
         pages, templates_per_page = _load_pages_and_templates(content_file)
+        if RENDER_TEMPLATES:
+            templates_per_page = _download_templates(templates_per_page, sftp)
+        else:
+            templates_per_page = None
         output_path = tmpdir / "rendered"
         process_document(
             metadata_path=files[f"{metadata_file.uuid}.metadata"],
@@ -168,20 +176,34 @@ def render_pages(
 def _download_files(
     metadata_file: RemarkableFile, sftp: SFTPClient, output_dir: Path
 ) -> dict:
-    paths_to_copy = [str(FILES_ROOT / file) for file in metadata_file.other_paths] + [
-        FILES_ROOT / f"{metadata_file.uuid}.metadata"
+    paths_to_copy = [str(FILES_ROOT / file) for file in metadata_file.other_files] + [
+        str(FILES_ROOT / f"{metadata_file.uuid}.metadata")
     ]
     file_paths = {}
     while paths_to_copy:
         remote_path = paths_to_copy.pop(0)
         if stat.S_ISDIR(sftp.stat(remote_path).st_mode):
-            paths_to_copy += sftp.listdir(remote_path)
+            paths_to_copy += [
+                str(Path(remote_path) / path) for path in sftp.listdir(remote_path)
+            ]
         else:
             target_path = output_dir / Path(remote_path).relative_to(FILES_ROOT)
             target_path.parent.mkdir(exist_ok=True, parents=True)
             sftp.get(remote_path, str(target_path))
             file_paths[target_path.name] = target_path
     return file_paths
+
+
+def _download_templates(
+    templates_per_page: dict[str, str], sftp: SFTPClient
+) -> dict[str, Path]:
+    downloaded = {}
+    for page, template in templates_per_page.items():
+        target_path = TEMPLATE_CACHE_DIR / (template + ".svg")
+        if not target_path.exists():
+            sftp.get(str(TEMPLATES_ROOT / target_path.name), str(target_path))
+        downloaded[page] = target_path
+    return downloaded
 
 
 def _load_content_file(content_file_path: Path | None) -> dict:
@@ -194,12 +216,12 @@ def _load_pages_and_templates(content_file: dict) -> tuple[dict, dict]:
     if "cPages" in content_file:
         pages = content_file.get("cPages", {}).get("pages", [])
     else:
-        pages = {"id": page for page in content_file["pages"]}
+        pages = [{"id": page} for page in content_file["pages"]]
     templates_per_page = {
         page["id"]: page.get("template", {}).get("value", "Blank") for page in pages
     }
     templates_per_page = {
-        page_id: TEMPLATES_ROOT / template
+        page_id: template
         for page_id, template in templates_per_page.items()
         if template != "Blank"
     }
@@ -209,5 +231,6 @@ def _load_pages_and_templates(content_file: dict) -> tuple[dict, dict]:
 def _pdf_page_to_bytes(page: PageObject) -> bytes:
     writer = PdfWriter()
     with BytesIO() as bytes_stream:
+        writer.add_page(page)
         writer.write(bytes_stream)
         return bytes_stream.getvalue()

@@ -1011,7 +1011,7 @@ requires-dist = [
     { name = "pandas", specifier = ">=2.2.3" },
     { name = "paramiko", specifier = ">=3.5.0" },
     { name = "pypdf", specifier = ">=5.2.0" },
-    { name = "remarks", git = "https://github.com/SNeugber/remarks?rev=add_template_support" },
+    { name = "remarks", git = "https://github.com/SNeugber/remarks?rev=ed21b2aeb13112e4e0bcb0869d085706ca264524" },
     { name = "rmrl", specifier = ">=0.2.1" },
     { name = "setuptools", specifier = ">=75.8.0" },
     { name = "shapely", specifier = ">=2.0.7" },
@@ -1031,7 +1031,7 @@ dev = [
 [[package]]
 name = "remarks"
 version = "0.3.10"
-source = { git = "https://github.com/SNeugber/remarks?rev=add_template_support#ccf66f236349fe560f821d13171a7724a728cf7a" }
+source = { git = "https://github.com/SNeugber/remarks?rev=ed21b2aeb13112e4e0bcb0869d085706ca264524#ed21b2aeb13112e4e0bcb0869d085706ca264524" }
 dependencies = [
     { name = "numpy" },
     { name = "parsita" },

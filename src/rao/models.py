@@ -37,11 +37,14 @@ class RemarkableFile:
     parent_uuid: str
     last_modified: datetime.date
     path: Path
-    other_paths: list[str]
+    other_files: list[str]
+
+    def __hash__(self):
+        return hash((self.uuid,))
 
     @property
     def has_pdf(self):
-        return any([p.endswith(".pdf") for p in self.other_paths])
+        return any([p.endswith(".pdf") for p in self.other_files])
 
 
 @dataclass(eq=True, frozen=True)
