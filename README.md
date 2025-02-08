@@ -211,3 +211,7 @@ At least on Windows this could work in WSL? But it wouldn't work during developm
 ## TODO<a name="todo"></a>
 
 1. Tests & Code Cleanup
+
+# Acknowledgements
+
+[rmc](https://github.com/ricklupton/rmc) does all the heavy lifting on parsing the remarkable files to PDF.
