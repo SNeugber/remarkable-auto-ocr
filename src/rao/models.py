@@ -37,7 +37,11 @@ class RemarkableFile:
     parent_uuid: str
     last_modified: datetime.date
     path: Path
-    has_pdf: bool
+    other_paths: list[str]
+
+    @property
+    def has_pdf(self):
+        return any([p.endswith(".pdf") for p in self.other_paths])
 
 
 @dataclass(eq=True, frozen=True)

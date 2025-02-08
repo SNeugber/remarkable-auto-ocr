@@ -1,7 +1,6 @@
 import json
 import re
 import tempfile
-from collections import namedtuple
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime
@@ -26,8 +25,6 @@ TEMPLATES_ROOT = Path("/usr/share/remarkable/templates/")
 SVG_VIEWBOX_PATTERN = re.compile(
     r"^<svg .+ viewBox=\"([\-\d.]+) ([\-\d.]+) ([\-\d.]+) ([\-\d.]+)\">$"
 )
-
-TmpMetadata = namedtuple("Metadata", ["filename", "st_mtime"])
 
 
 @contextmanager
@@ -66,16 +63,7 @@ def get_files(
     files_df = pd.DataFrame(
         [attr.__dict__ for attr in sftp.listdir_attr(str(FILES_ROOT))]
     )
-    meta_files = files_df[files_df.filename.str.endswith(".metadata")]
-    pdf_file_uuids = set(
-        files_df[files_df.filename.str.endswith(".pdf")].filename.apply(
-            lambda p: Path(p).stem
-        )
-    )
-    meta_files = [
-        TmpMetadata(*row) for row in meta_files[["filename", "st_mtime"]].values
-    ]
-    files = _load_metadata_files(sftp, meta_files, pdf_file_uuids)
+    files = _load_metadata_files(sftp, files_df)
     files = [
         file
         for file in files
@@ -86,18 +74,29 @@ def get_files(
 
 
 def _load_metadata_files(
-    sftp: paramiko.SSHClient,
-    metadata_files: list[TmpMetadata],
-    pdf_file_uuids: set[str],
+    sftp: paramiko.SSHClient, files_df: pd.DataFrame
 ) -> RemarkableFile:
-    data = {
-        Path(file.filename).stem: {
-            **json.loads(sftp.open(str(FILES_ROOT / file.filename)).read()),
-            "st_mtime": file.st_mtime,
+    meta_files = files_df[files_df.filename.str.endswith(".metadata")]
+
+    meta_file_contents = {}
+    for _, row in meta_files.iterrows():
+        meta_filename = row.filename
+        uuid = Path(meta_filename).stem
+        if uuid in meta_file_contents:
+            logger.warning(f"Duplicate entry for metadata file {uuid}")
+            continue
+        other_files = files_df[
+            files_df.filename.str.contains(uuid)
+            & (files_df.filename.str.contains("."))
+            & (~files_df.filename.str.contains(".metadata"))
+        ].filename.to_list()
+        meta_content = json.loads(sftp.open(str(FILES_ROOT / meta_filename)).read())
+        meta_file_contents[uuid] = {
+            **meta_content,
+            "st_mtime": row.st_mtime,
+            "other_files": other_files,
         }
-        for file in metadata_files
-    }
-    paths = _load_file_paths(data)
+    paths = _load_file_paths(meta_file_contents)
 
     return [
         RemarkableFile(
@@ -107,9 +106,9 @@ def _load_metadata_files(
             name=meta["visibleName"],
             type=meta["type"],
             path=paths[uuid],
-            has_pdf=uuid in pdf_file_uuids,
+            other_files=meta["other_files"],
         )
-        for uuid, meta in data.items()
+        for uuid, meta in meta_file_contents.items()
     ]
 
 
