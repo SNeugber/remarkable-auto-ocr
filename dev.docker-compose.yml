@@ -1,0 +1,15 @@
+services:
+  rao-dev:
+    build:
+      context: .
+      dockerfile: dev.dockerfile
+    image: rao-dev
+    command: /bin/sh -c "while sleep 1000; do :; done"
+    volumes:
+      - ..:/workspaces:cached
+      - ${HOME}/.ssh:/root/.ssh
+      - gdrive:/data/gdrive
+
+volumes:
+  gdrive:
+    external: true
