@@ -12,17 +12,21 @@ This is a utility service intended to automatically sync and convert handwritten
 1. Set up your tablet for [ssh key authentication](https://remarkable.guide/guide/access/ssh.html).
 1. Create a whitelist, blacklist, and custom prompts: [Which Files to Process](#which-files-to-process)
 1. Create a Google AI Studio API key: [Google AI Studio](https://aistudio.google.com/apikey)
-1. Create a file `config.toml` in the project root directory: [Config](#config)
+1. Create a file `config.toml` (default: in the project root directory): [Config](#config)
 1. Set up a repository & google drive directory to save the data to:
    [Saving Data to External Resources](#saving-data-to-external-resources)
-1. Update [docker-compose.yml](./docker-compose.yml) to mount your paths
+1. Update [docker-compose.yml](./docker-compose.yml) to mount your paths:
+   - The `config.toml` file if not in the project dir
+   - The path to the repo to save markdown files to
+   - The docker volume for the google drive integration
 1. Start the service: `docker compose up --build rao`
 
 ## Dev Setup
 
 1. [Install VSCode](https://code.visualstudio.com/download)
 1. Install the [devcontainers extension](https://code.visualstudio.com/docs/devcontainers/containers)
-1. Launch project in the dev container
+1. Update [dev.docker-compose.yml](./dev.docker-compose.yml) instead of [docker-compose.yml](./docker-compose.yml) above
+1. Open project in the dev container
 1. Run app through vscode using the configurations in `launch.json`
 
 ## Config
@@ -58,20 +62,21 @@ To select which files should be processed and how to do so, you can create two f
 The whitelist is a list of paths that select which files to process. This can be paths to entire directories, or
 specific file paths. It should be structured as follows:
 
-```markdown
-| path   | prompt_path    | pdf_only | force_reprocess |
-|--------|----------------|----------|-----------------|
-| A/B    | prompt_ab.txt  | False    |                 |
-| A/B/C  | prompt_abc.txt | False    |                 |
-| C      |                | True     |                 |
-| D      | D/prompt.txt   | True     |                 |
-```
+| path  | prompt_path    | pdf_only | force_reprocess |
+| ----- | -------------- | -------- | --------------- |
+| A/B   | prompt_ab.txt  | False    |                 |
+| A/B/C | prompt_abc.txt | False    |                 |
+| C     |                | True     | always          |
+| D     | D/prompt.txt   | True     | once            |
 
 - The `path` column specifies which files on the tablet to process.
 - The `prompt_path` column specifies whether a [prompt](#custom-prompts) different to the default prompt in the
   [config](#config) should be used.
 - The `pdf_only` column indicates whether files should be rendered as pdf only, instead of turning them into markdown by
   default.
+- The `force_reprocess` column indicates whether file(s) should be reprocessed, regardless of whether they are outdated
+  or not. Must be one of \[`once`, `always`\].
+  - If it's `once` the value will be automatically cleared for the next sync run
 
 If the path is a directory then all files in that directory will be processed with the given configuration.
 
