@@ -30,7 +30,7 @@ This is a utility service intended to automatically sync and convert handwritten
   - [`md_repo_path`](#md_repo_path)
   - [`pdf_copy_path`](#pdf_copy_path)
 - [Known Issues](#known-issues)
-  - [PDF overlays from Paper Pro](#pdf-overlays-from-paper-pro)
+  - [Rotated PDFs](#rotated-pdfs)
   - [Finding the tablet IP automatically](#finding-the-tablet-ip-automatically)
 - [TODO](#todo)
 
@@ -204,10 +204,9 @@ volumes:
 
 ## Known Issues
 
-### PDF overlays from Paper Pro
+### Rotated PDFs
 
-[rmc](https://github.com/ricklupton/rmc) isn't quite ready for data from the paper pro tablet I think. Annotated PDFs
-and template background aren't rendering right as of now :(
+`remarks` doesn't appear to deal with rotated PDFs well it seems.
 
 ### Finding the tablet IP automatically
 
@@ -217,9 +216,9 @@ to make certain apt packages mandatory during installation and limit the app to 
 
 ## TODO
 
-1. Disable template rendering for now
 1. Tests & Code Cleanup
-1. Fix template/PDF rendering
+1. Fix template rendering
+1. Fix rotated PDF rendering
 1. Update dependency back to original rmc repo when it's ready for the paper pro
 
 # Acknowledgements
