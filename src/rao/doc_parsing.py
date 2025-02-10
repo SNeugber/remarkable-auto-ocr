@@ -23,7 +23,7 @@ def pages_to_md(
             failed.add(page)
     for page in failed:
         logger.error(
-            f"Failed to convert {page.page_idx} of file {page.parent.name} to markdown."
+            f"Failed to convert page {page.page_idx} of file {page.parent.name} to markdown."
         )
     return rendered, failed
 

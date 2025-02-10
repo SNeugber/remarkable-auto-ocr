@@ -25,7 +25,7 @@ SVG_VIEWBOX_PATTERN = re.compile(
     r"^<svg .+ viewBox=\"([\-\d.]+) ([\-\d.]+) ([\-\d.]+) ([\-\d.]+)\">$"
 )
 TEMPLATE_CACHE_DIR = Path("./data/templates_cache")
-RENDER_TEMPLATES = False  # Currently not properly supported in RMC
+RENDER_TEMPLATES = True
 
 
 @contextmanager
@@ -147,16 +147,19 @@ def render_pages(
             sftp.close()
             return []
         pages, templates_per_page = _load_pages_and_templates(content_file)
-        if RENDER_TEMPLATES:
-            templates_per_page = _download_templates(templates_per_page, sftp)
-        else:
-            templates_per_page = None
-        output_path = tmpdir / "rendered"
-        process_document(
-            metadata_path=files[f"{metadata_file.uuid}.metadata"],
-            out_path=output_path,
-            templates_per_page=templates_per_page,
+        template_paths = (
+            _download_templates(templates_per_page, sftp) if RENDER_TEMPLATES else None
         )
+        output_path = tmpdir / "rendered"
+        try:
+            process_document(
+                metadata_path=files[f"{metadata_file.uuid}.metadata"],
+                out_path=output_path,
+                template_paths=template_paths,
+            )
+        except Exception as e:
+            logger.error(f"Failed to process document {metadata_file.name}: {e}")
+            return []
         pdf = PdfReader(output_path.with_name(output_path.stem + " _remarks.pdf"))
     sftp.close()
 
@@ -202,7 +205,7 @@ def _download_templates(
         target_path = TEMPLATE_CACHE_DIR / (template + ".svg")
         if not target_path.exists():
             sftp.get(str(TEMPLATES_ROOT / target_path.name), str(target_path))
-        downloaded[page] = target_path
+        downloaded[target_path.stem] = target_path
     return downloaded
 
 
