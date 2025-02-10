@@ -40,7 +40,7 @@ build-backend = "hatchling.build"
 packages = ["src/rao"]
 
 [tool.uv.sources]
-remarks = { git = "https://github.com/SNeugber/remarks", rev = "b6b3272a59c0469a5ecf346bf9d96c2ba5ec93bd" }
+remarks = { git = "https://github.com/SNeugber/remarks", rev = "01ba827b2f464e022b1f97214200c5ab2a1cf6f3" }
 
 
 [project.scripts]
