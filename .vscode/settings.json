@@ -25,4 +25,10 @@
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "charliermarsh.ruff",
     "python.analysis.typeCheckingMode": "off",
+    "ruff.interpreter": [
+        ".venv/bin/python"
+    ],
+    "ruff.path": [
+        ".venv/bin/ruff"
+    ],
 }
