@@ -7,7 +7,7 @@
             "request": "launch",
             "console": "integratedTerminal",
             "program": "${workspaceFolder}/src/rao/main.py",
-            "justMyCode": "false",
+            "justMyCode": false,
             "python": "${workspaceFolder}/.venv/bin/python",
             "preLaunchTask": "uv-sync"
         },
@@ -17,7 +17,17 @@
             "request": "launch",
             "console": "integratedTerminal",
             "program": "${file}",
-            "justMyCode": "false",
+            "justMyCode": false,
+            "python": "${workspaceFolder}/.venv/bin/python",
+            "preLaunchTask": "uv-sync"
+        },
+        {
+            "name": "Tests",
+            "type": "debugpy",
+            "request": "launch",
+            "console": "integratedTerminal",
+            "program": "uvx pytest",
+            "justMyCode": false,
             "python": "${workspaceFolder}/.venv/bin/python",
             "preLaunchTask": "uv-sync"
         },
