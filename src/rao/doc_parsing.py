@@ -69,6 +69,9 @@ def _pdf2md(pdf_data: bytes, prompt: str) -> str:
             )
             return response.text
         except Exception as e:
+            logger.warning(
+                f"Failed to get response using model {model}. Trying backup..."
+            )
             exception = e
     logger.error(f"Failed to convert PDF to markdown.\n{exception}")
     return None
