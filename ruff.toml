@@ -1,5 +1,5 @@
 [lint]
-extendSelect = ["I"]
+extend-select = ["I"]
 
 [format]
 
