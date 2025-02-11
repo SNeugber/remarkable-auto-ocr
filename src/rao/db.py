@@ -46,18 +46,24 @@ def out_of_sync_files(
 
 
 def out_of_sync_pages(
-    pages: Iterable[RemarkablePage], engine: Engine
+    pages: Iterable[RemarkablePage],
+    file_configs: dict[RemarkableFile, ProcessingConfig],
+    engine: Engine,
 ) -> list[RemarkablePage]:
     page_ids = [page.uuid for page in pages]
     Session = sessionmaker(bind=engine)
     session = Session()
     db_pages = session.query(Page).filter(Page.uuid.in_(page_ids)).all()
-    to_update = []
+    to_update = {
+        page
+        for page in pages
+        if page.parent in file_configs and file_configs[page.parent].force_reprocess
+    }
     for page in pages:
         db_page = next((p for p in db_pages if p.uuid == page.uuid), None)
         if db_page is None or db_page.hash != page.hash:
-            to_update.append(page)
-    return to_update
+            to_update.add(page)
+    return list(to_update)
 
 
 def mark_as_synced(

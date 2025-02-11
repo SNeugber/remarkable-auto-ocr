@@ -46,7 +46,7 @@ def run_once(engine: Engine, config_path: Path | None):
         pages = [remarkable.render_pages(session, file) for file in files_to_update]
 
     all_pages = list(itertools.chain.from_iterable(pages))
-    out_of_sync_pages = db.out_of_sync_pages(all_pages, engine)
+    out_of_sync_pages = db.out_of_sync_pages(all_pages, file_configs, engine)
     rendered, failed = dp.pages_to_md(out_of_sync_pages, file_configs)
     saved = fs.save(all_pages, rendered)
     saved = {
