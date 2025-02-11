@@ -29,12 +29,14 @@ def pages_to_md(
 
 
 def _postprocess(md: str) -> str:
-    md = md.lstrip("\n").rstrip("\n")
-    if md.startswith("```markdown"):
-        md = md[len("```markdown") :]
+    md = md.strip("\n")
+    if md.startswith("```"):
+        md = md[len("```") :]
+        if md.startswith("markdown"):
+            md = md[len("markdown") :]
         if md.endswith("```"):  # It doesn't always, thanks to GenAI randomness...
             md = md[: -len("```")]
-    return md.lstrip("\n").rstrip("\n")
+    return md.strip("\n")
 
 
 def _pdf2md(pdf_data: bytes, prompt: str) -> str:
