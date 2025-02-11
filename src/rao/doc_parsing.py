@@ -61,8 +61,8 @@ def _pdf2md(pdf_data: bytes, prompt: str) -> str:
     prompt = prompt + DOC_FORMATTING_PROMPT
 
     exception = None
-    for model in [Config.model, Config.backup_model]:
-        model = genai.GenerativeModel(model)
+    for model_name in [Config.model, Config.backup_model]:
+        model = genai.GenerativeModel(model_name)
         try:
             response = model.generate_content(
                 [{"mime_type": "application/pdf", "data": pdf_enc}, prompt]
@@ -70,7 +70,7 @@ def _pdf2md(pdf_data: bytes, prompt: str) -> str:
             return response.text
         except Exception as e:
             logger.warning(
-                f"Failed to get response using model {model}. Trying backup..."
+                f"Failed to get response using model {model_name}. Trying backup..."
             )
             exception = e
     logger.error(f"Failed to convert PDF to markdown.\n{exception}")
