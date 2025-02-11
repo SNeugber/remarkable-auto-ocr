@@ -136,17 +136,23 @@ def _sync_with_subrepo():
     )
     _save_markdown_repo_readme_file()
     try:
-        subprocess.run(["git", "add", "."], cwd=Config.md_repo_path, check=True)
+        subprocess.run(
+            ["git", "add", "."],
+            cwd=Config.md_repo_path,
+            check=True,
+            capture_output=True,
+        )
         subprocess.run(
             ["git", "commit", "-m", "Update files"],
             cwd=Config.md_repo_path,
             check=True,
+            capture_output=True,
         )
         subprocess.run(
             ["git", "push"], cwd=Config.md_repo_path, check=True, capture_output=True
         )
     except subprocess.CalledProcessError as e:
-        if "nothing to commit" in e.stdout:
+        if e.stdout is not None and "nothing to commit" in e.stdout.decode("utf-8"):
             return
         logger.error(f"Unable to sync files with with subrepo: {e}")
 
