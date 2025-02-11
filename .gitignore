@@ -5,6 +5,7 @@ config.toml
 *.svg
 *.pdf
 *.rm
+.vscode/*.code-workspace
 
 # Ruff
 .ruff_cache/
