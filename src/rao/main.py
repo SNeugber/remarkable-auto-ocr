@@ -34,9 +34,6 @@ def run_once(engine: Engine, config_path: Path | None):
     Config.reload(config_path)
     with remarkable.connect() as session:
         if session is None:
-            logger.warning(
-                f"Could not connect to Remarkable, trying again in {Config.check_interval} seconds"
-            )
             return
         files = remarkable.get_files(session)
         file_configs = fpc.get_configs_for_files(files)

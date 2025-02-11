@@ -42,6 +42,7 @@ class _Config:
         ):
             if not path.exists():
                 continue
+            logger.info(f"Loading config from {path}")
             data = tomllib.load(path.open("rb"))
             return _Config(**data["remarkable-auto-ocr-app"])
         raise FileNotFoundError("Unable to find a config file, aborting")

@@ -81,6 +81,10 @@ def _save_mds_to_disk(
     for page in md_files.keys():
         pages_per_file[page.parent][page] = md_files[page]
 
+    logger.info(
+        f"Updating {len(md_files)} rendered markdown pages on disk in {len(pages_per_file)} documents"
+    )
+
     for parent, pages in pages_per_file.items():
         parent_path = base_dir / parent.path
         target_dir = parent_path.parent
@@ -106,6 +110,10 @@ def _save_pdfs_to_disk(
     for page in pages:
         pages_per_file[page.parent].append(page)
 
+    logger.info(
+        f"Updating {len(pages)} rendered PDF pages on disk in {len(pages_per_file)} documents"
+    )
+
     for parent, pages in pages_per_file.items():
         parent_path = base_dir / parent.path
         target_dir = parent_path.parent
@@ -127,6 +135,7 @@ def _save_combined_pdf(pdf_path: Path, pages: list[RemarkablePage]) -> None:
 
 
 def _sync_with_subrepo():
+    logger.info("Syncing markdown files with subrepo ...")
     base_dir = Path(Config.render_path) / "md"
     if not Path(Config.md_repo_path).exists():
         logger.error("Repo to save markdown files to does not exist! Aborting ...")
@@ -202,6 +211,7 @@ def _dir_to_md_tree(root_path: Path, path: Path, prefix="  "):
 
 
 def _copy_to_external_folder(paths: list[Path]):
+    logger.info("Copying PDFs to target directory ...")
     base_dir = Path(Config.render_path) / "pdf"
     if not Path(Config.pdf_copy_path).exists():
         logger.error(

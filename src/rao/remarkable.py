@@ -30,6 +30,7 @@ RENDER_TEMPLATES = True
 
 @contextmanager
 def connect(retries: int = 5) -> Iterator[paramiko.SSHClient | None]:
+    logger.info(f"Connecting to tablet at {Config.ssh_key_path}")
     pk_file = Path(Config.ssh_key_path)
     if not pk_file.exists():
         raise FileNotFoundError(pk_file)
@@ -41,7 +42,7 @@ def connect(retries: int = 5) -> Iterator[paramiko.SSHClient | None]:
     policy = paramiko.AutoAddPolicy()
     client.set_missing_host_key_policy(policy)
     connected = False
-    for _ in range(retries):
+    for i in range(retries):
         try:
             client.connect(
                 Config.remarkable_ip_address, username="root", pkey=pkey, timeout=5
@@ -49,8 +50,14 @@ def connect(retries: int = 5) -> Iterator[paramiko.SSHClient | None]:
             connected = True
             break
         except TimeoutError:
+            if i < retries - 1:
+                logger.info("Couldn't connect, retrying...")
             continue
 
+    if not connected:
+        logger.warning(
+            f"Could not connect to Remarkable, trying again in {Config.check_interval} seconds"
+        )
     try:
         yield client if connected else None
     finally:
@@ -60,6 +67,7 @@ def connect(retries: int = 5) -> Iterator[paramiko.SSHClient | None]:
 def get_files(
     client: paramiko.SSHClient,
 ) -> list[RemarkableFile]:
+    logger.info("Fetching file list from remarkable ...")
     sftp = client.open_sftp()
     files_df = pd.DataFrame(
         [attr.__dict__ for attr in sftp.listdir_attr(str(FILES_ROOT))]
@@ -132,6 +140,7 @@ def _load_file_paths(
 def render_pages(
     client: paramiko.SSHClient, metadata_file: RemarkableFile
 ) -> list[RemarkablePage]:
+    logger.info(f"Rendering pages for file {metadata_file.name}")
     TEMPLATE_CACHE_DIR.mkdir(exist_ok=True, parents=True)
     sftp = client.open_sftp()
     with tempfile.TemporaryDirectory() as tmpdir:

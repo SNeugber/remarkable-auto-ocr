@@ -22,6 +22,7 @@ For example, given some document content denoted with the placeholder "<content>
 def pages_to_md(
     pages: list[RemarkablePage], file_configs: dict[RemarkableFile, ProcessingConfig]
 ) -> tuple[dict[RemarkablePage, str], set[RemarkablePage]]:
+    logger.info(f"Converting {len(pages)} to markdown")
     rendered = {}
     failed: set[RemarkablePage] = set()
     for page in pages:
@@ -36,6 +37,9 @@ def pages_to_md(
         logger.error(
             f"Failed to convert page {page.page_idx} of file {page.parent.name} to markdown."
         )
+    logger.info(
+        f"Converted {len(rendered)} to markdown, failed to convert {len(failed)}"
+    )
     return rendered, failed
 
 

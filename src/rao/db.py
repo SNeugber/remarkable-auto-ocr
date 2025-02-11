@@ -1,6 +1,7 @@
 from collections.abc import Iterable
 from pathlib import Path
 
+from loguru import logger
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
@@ -20,6 +21,7 @@ def get_engine() -> Engine:
 def out_of_sync_files(
     file_configs: dict[RemarkableFile, ProcessingConfig], engine: Engine
 ) -> list[RemarkableFile]:
+    logger.info("Fetching files to process from DB")
     files_to_update = [
         file for file, config in file_configs.items() if config.force_reprocess
     ]
@@ -42,6 +44,7 @@ def out_of_sync_files(
             or (meta_by_uuid[file.uuid].prompt_hash != file_configs[file].prompt_hash)
         ):
             files_to_update.append(file)
+    logger.info(f"Got {len(files_to_update)} out of sync files from DB")
     return files_to_update
 
 
@@ -50,6 +53,7 @@ def out_of_sync_pages(
     file_configs: dict[RemarkableFile, ProcessingConfig],
     engine: Engine,
 ) -> list[RemarkablePage]:
+    logger.info("Fetching pages that need updating from DB")
     page_ids = [page.uuid for page in pages]
     Session = sessionmaker(bind=engine)
     session = Session()
@@ -63,6 +67,7 @@ def out_of_sync_pages(
         db_page = next((p for p in db_pages if p.uuid == page.uuid), None)
         if db_page is None or db_page.hash != page.hash:
             to_update.add(page)
+    logger.info(f"Got {len(to_update)} out of sync pages from DB")
     return list(to_update)
 
 
@@ -71,13 +76,15 @@ def mark_as_synced(
     file_configs: dict[RemarkableFile, ProcessingConfig],
     engine: Engine,
 ):
+    file_uuids = [file.uuid for file in saved.keys()]
+    page_uuids = [page.uuid for pages in saved.values() for page in pages]
+
+    logger.info(f"Updating {len(file_uuids)} files and {len(page_uuids)} pages in DB")
     if len(saved) == 0:
         return
     Session = sessionmaker(bind=engine)
     session = Session()
 
-    file_uuids = [file.uuid for file in saved.keys()]
-    page_uuids = [page.uuid for pages in saved.values() for page in pages]
     existing_files = session.query(Metadata).filter(Metadata.uuid.in_(file_uuids)).all()
     existing_files = {f.uuid: f for f in existing_files}
     existing_pages = session.query(Page).filter(Page.uuid.in_(page_uuids)).all()

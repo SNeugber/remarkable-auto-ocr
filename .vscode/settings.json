@@ -16,10 +16,7 @@
             "source.fixAll": "explicit",
         }
     },
-
-    "ruff.lint.args": [
-        "--config=ruff.toml"
-    ],
+    "python.analysis.autoFormatStrings": true,
     "ruff.organizeImports": true,
     "ruff.fixAll": true,
     "editor.formatOnSave": true,
