@@ -7,9 +7,7 @@ from loguru import logger
 
 Seconds: TypeAlias = int
 
-_DEFAULT_PROMPT = """Render this document as rmarkdown and ensure that tables are rendered as such where required.
-Avoid wrapping the entire content in triple-backtick blocks (e.g. "```markdown ... ```"), just return the markdown as-is.
-"""
+_DEFAULT_PROMPT = """Render this document as rmarkdown and ensure that tables are rendered as such where required."""
 
 
 class ConfigLoadError(Exception):
