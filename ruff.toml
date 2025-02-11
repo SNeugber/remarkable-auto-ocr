@@ -1,2 +1,7 @@
 [lint]
-extend-select = ["I"]
+extendSelect = ["I"]
+
+[format]
+
+quote-style = "double"
+indent-style = "space"
