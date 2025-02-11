@@ -2,6 +2,9 @@
 data/
 logs/
 config.toml
+*.svg
+*.pdf
+*.rm
 
 # Ruff
 .ruff_cache/
