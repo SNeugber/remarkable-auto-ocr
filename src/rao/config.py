@@ -27,7 +27,8 @@ class _Config:
     md_repo_path: str | None = None
     pdf_copy_path: str | None = None
     default_prompt: str = _DEFAULT_PROMPT
-    model: str = "gemini-1.5-flash"
+    model: str = "gemini-1.5-pro"
+    backup_model: str = "gemini-1.5-flash"
     prompts_dir: str = "./data/prompts"
     render_path: str = "./data/renders"
 

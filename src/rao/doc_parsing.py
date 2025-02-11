@@ -43,12 +43,15 @@ def _pdf2md(pdf_data: bytes, prompt: str) -> str:
     genai.configure(api_key=Config.google_api_key)
     pdf_enc = base64.standard_b64encode(pdf_data).decode("utf-8")
 
-    model = genai.GenerativeModel(Config.model)
-    try:
-        response = model.generate_content(
-            [{"mime_type": "application/pdf", "data": pdf_enc}, prompt]
-        )
-        return response.text
-    except Exception as e:
-        logger.error(f"Failed to convert PDF to markdown.\n{e}")
-        return None
+    exception = None
+    for model in [Config.model, Config.backup_model]:
+        model = genai.GenerativeModel(model)
+        try:
+            response = model.generate_content(
+                [{"mime_type": "application/pdf", "data": pdf_enc}, prompt]
+            )
+            return response.text
+        except Exception as e:
+            exception = e
+    logger.error(f"Failed to convert PDF to markdown.\n{exception}")
+    return None
