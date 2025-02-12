@@ -218,9 +218,7 @@ to make certain apt packages mandatory during installation and limit the app to 
 
 1. Tests & Code Cleanup
 1. Save DB in gdrive
-1. Fix template rendering
-1. Fix rotated PDF rendering -> Need to submit PR
-1. Update dependency back to original rmc repo when it's ready for the paper pro
+1. Find a better way to check if template can't be tiled
 
 # Acknowledgements
 

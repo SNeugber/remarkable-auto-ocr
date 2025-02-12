@@ -78,12 +78,8 @@ def test_config_reload_success(mock_tomllib_load):
     # Set the return value of the mocked tomllib.load function
     mock_tomllib_load.return_value = mock_config_data
 
-    # Mock the path.exists() method to return True
-    with patch.object(Path, "exists", return_value=True):
-        # Call the reload method with the mock path
-        config.reload(path_override=mock_config_path)
-        # Call the reload method with the mock path
-        config.reload(path_override=mock_config_path)
+    # Call the reload method with the mock path
+    config.reload(path_override=mock_config_path)
 
     # Assert that the config values are loaded correctly
     assert config.google_api_key == "test_key"
