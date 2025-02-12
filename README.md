@@ -222,4 +222,5 @@ to make certain apt packages mandatory during installation and limit the app to 
 
 # Acknowledgements
 
-[rmc](https://github.com/ricklupton/rmc) does all the heavy lifting on parsing the remarkable files to PDF.
+[rmc](https://github.com/ricklupton/rmc) and [remarks](https://github.com/Azeirah/remarks) do all the the heavy lifting
+of parsing the remarkable files to PDF.
