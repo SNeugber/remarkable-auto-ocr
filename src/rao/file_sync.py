@@ -24,7 +24,7 @@ def save(
     if Config.md_repo_path:
         _sync_with_subrepo()
     if Config.pdf_copy_path:
-        _copy_to_external_folder(saved_paths)
+        _copy_rendered_pdfs_to_external_folder(saved_paths)
     return saved_pdf_files
 
 
@@ -210,7 +210,7 @@ def _dir_to_md_tree(root_path: Path, path: Path, prefix="  "):
     return lines
 
 
-def _copy_to_external_folder(paths: list[Path]):
+def _copy_rendered_pdfs_to_external_folder(paths: list[Path]):
     logger.info("Copying PDFs to target directory ...")
     base_dir = Path(Config.render_path) / "pdf"
     if not Path(Config.pdf_copy_path).exists():

@@ -24,6 +24,7 @@ class _Config:
     blacklist_path: str | None = None
     md_repo_path: str | None = None
     pdf_copy_path: str | None = None
+    db_data_dir: str | None = None
     default_prompt: str = _DEFAULT_PROMPT
     model: str = "gemini-1.5-pro"
     backup_model: str = "gemini-1.5-flash"

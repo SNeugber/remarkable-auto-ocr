@@ -6,14 +6,15 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
 
+from .config import Config
 from .file_processing_config import ProcessingConfig
 from .models import Base, Metadata, Page, RemarkableFile, RemarkablePage
 
 
 def get_engine() -> Engine:
-    db_dir = Path("./data")
+    db_dir = Path(Config.db_data_dir if Config.db_data_dir else "./data/")
     db_dir.mkdir(exist_ok=True)
-    engine = create_engine("sqlite:///data/db.sqlite", echo=True)
+    engine = create_engine(f"sqlite:///{db_dir}/db.sqlite", echo=True)
     Base.metadata.create_all(engine)
     return engine
 

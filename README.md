@@ -217,7 +217,6 @@ to make certain apt packages mandatory during installation and limit the app to 
 ## TODO
 
 1. Tests & Code Cleanup
-1. Save DB in gdrive
 1. Find a better way to check if template can't be tiled
 
 # Acknowledgements
