@@ -41,8 +41,7 @@ build-backend = "hatchling.build"
 packages = ["src/rao"]
 
 [tool.uv.sources]
-remarks = { git = "https://github.com/SNeugber/remarks", rev = "48f6fa2499890f287cf331f2149a1ec69be40963" }
-
+remarks = { git = "https://github.com/SNeugber/remarks", rev = "a757d7e79ef4118ee92033f5087a53b682e1c96c" }
 
 [project.scripts]
 rm-auto-ocr = "rao.main:main"
