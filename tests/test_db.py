@@ -1,13 +1,47 @@
+from collections.abc import Callable
 from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from rao import db
 from rao.file_processing_config import ProcessingConfig
 from rao.models import Base, Metadata, RemarkableFile
+
+
+@pytest.fixture
+def files_and_configs():
+    def build(n: int):
+        files = [
+            RemarkableFile(
+                uuid=f"uuid{i}",
+                name=f"file{i}",
+                last_modified=datetime.now(),
+                type="document",
+                parent_uuid=None,
+                path=Path(f"file{i}"),
+                other_files=[],
+            )
+            for i in range(n)
+        ]
+        configs = [
+            ProcessingConfig(pdf_only=False, force_reprocess=False, prompt=f"{i}")
+            for i in range(n)
+        ]
+        meta_data = [
+            Metadata(
+                uuid=files[i].uuid,
+                last_modified=files[i].last_modified,
+                prompt_hash=configs[i].prompt_hash,
+            )
+            for i in range(n)
+        ]
+        return (files, configs, meta_data)
+
+    return build
 
 
 @patch("rao.db.Base")
@@ -26,44 +60,30 @@ def test_get_engine(mock_config: MagicMock, mock_base: MagicMock, tmp_path: Path
     mock_base.metadata.create_all.assert_called_once_with(engine)
 
 
-def test_out_of_sync_files():
-    # Mock the engine and session objects
+def test_out_of_sync_files(
+    files_and_configs: Callable[[int], dict[RemarkableFile, ProcessingConfig]],
+):
+    # Given
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
     session = Session(bind=engine)
 
-    file1 = RemarkableFile(
-        uuid="uuid1",
-        name="file1",
-        last_modified=datetime.now(),
-        type="a",
-        parent_uuid=None,
-        path=Path("file1"),
-        other_files=[],
-    )
-    file2 = RemarkableFile(
-        uuid="uuid2",
-        name="file2",
-        last_modified=datetime.now(),
-        type="a",
-        parent_uuid=None,
-        path=Path("file2"),
-        other_files=[],
-    )
+    files, configs, meta = files_and_configs(4)
+    file_configs = {f: c for f, c in zip(files, configs)}
 
-    config1 = ProcessingConfig(pdf_only=True, force_reprocess=False, prompt=None)
-    config2 = ProcessingConfig(pdf_only=True, force_reprocess=True, prompt=None)
+    meta[0].last_modified = datetime.now() - timedelta(days=1)  # 1: Out of date
+    configs[1].force_reprocess = True  # 2: Force reprocess
+    meta[2].prompt_hash = 123  # 3: Prompt hash changed
 
-    file_configs = {file1: config1, file2: config2}
-
-    meta1 = Metadata(
-        uuid="uuid1", last_modified=datetime.now() - timedelta(days=1), prompt_hash=123
-    )
-    session.add(meta1)
+    session.add_all(meta)
     session.commit()
 
+    # When
     out_of_sync = db.out_of_sync_files(file_configs, engine)
-    assert len(out_of_sync) == 2
+
+    # Then
+    assert len(out_of_sync) == 3
+    assert any(f.uuid == "uuid0" for f in out_of_sync)
     assert any(f.uuid == "uuid1" for f in out_of_sync)
     assert any(f.uuid == "uuid2" for f in out_of_sync)
 
