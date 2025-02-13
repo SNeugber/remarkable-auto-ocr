@@ -3,8 +3,8 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from src.rao import db
-from src.rao.models import Base, Metadata, ProcessingConfig, RemarkableFile
+from rao import db
+from rao.models import Base, Metadata, ProcessingConfig, RemarkableFile
 
 
 def test_get_engine():

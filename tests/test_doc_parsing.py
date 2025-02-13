@@ -1,11 +1,11 @@
 # tests/test_doc_parsing.py
 from unittest.mock import MagicMock, patch
 
-from src.rao import doc_parsing
-from src.rao.models import ProcessingConfig, RemarkableFile, RemarkablePage
+from rao import doc_parsing
+from rao.models import ProcessingConfig, RemarkableFile, RemarkablePage
 
 
-@patch("src.rao.doc_parsing.genai")
+@patch("rao.doc_parsing.genai")
 def test__pdf2md(mock_genai):
     mock_config = MagicMock()
     mock_config.google_api_key = "test_key"
@@ -27,7 +27,7 @@ def test__pdf2md(mock_genai):
     mock_genai.GenerativeModel.assert_called_with("test_model")
 
 
-@patch("src.rao.doc_parsing.genai")
+@patch("rao.doc_parsing.genai")
 def test__pdf2md_backup_model(mock_genai):
     mock_config = MagicMock()
     mock_config.google_api_key = "test_key"
@@ -55,8 +55,8 @@ def test__pdf2md_backup_model(mock_genai):
     mock_genai.GenerativeModel.assert_called_with("backup_model")
 
 
-@patch("src.rao.doc_parsing.genai")
-@patch("src.rao.doc_parsing._pdf2md")
+@patch("rao.doc_parsing.genai")
+@patch("rao.doc_parsing._pdf2md")
 def test_pages_to_md(mock_pdf2md, mock_genai):
     mock_config = MagicMock()
     mock_config.google_api_key = "test_key"
@@ -92,8 +92,8 @@ def test_pages_to_md(mock_pdf2md, mock_genai):
     mock_pdf2md.assert_any_call(mock_page2.pdf_data, prompt="")
 
 
-@patch("src.rao.doc_parsing.genai")
-@patch("src.rao.doc_parsing._pdf2md")
+@patch("rao.doc_parsing.genai")
+@patch("rao.doc_parsing._pdf2md")
 def test_pages_to_md_failure(mock_pdf2md, mock_genai):
     mock_config = MagicMock()
     mock_config.google_api_key = "test_key"
@@ -129,8 +129,8 @@ def test_pages_to_md_failure(mock_pdf2md, mock_genai):
     mock_pdf2md.assert_any_call(mock_page2.pdf_data, prompt="")
 
 
-@patch("src.rao.doc_parsing.genai")
-@patch("src.rao.doc_parsing._pdf2md")
+@patch("rao.doc_parsing.genai")
+@patch("rao.doc_parsing._pdf2md")
 def test_pages_to_md_pdf_only(mock_pdf2md, mock_genai):
     mock_config = MagicMock()
     mock_config.google_api_key = "test_key"

@@ -1,20 +1,28 @@
 # tests/test_config.py
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 import tomllib
 
-from src.rao.config import ConfigLoadError, _Config
+from rao.config import ConfigLoadError, _Config
+
+
+@pytest.fixture
+def default_config() -> _Config:
+    return _Config(
+        google_api_key="test_key",
+        remarkable_ip_address="test_ip",
+        ssh_key_path="test_path",
+    )
 
 
 # Mock the tomllib.load function
 @patch("tomllib.load")
-def test_config_load_success(mock_tomllib_load):
-    # Create a mock config file path
-    mock_config_path = Path("./test_config.toml")
-
-    # Create mock config data
+def test_config_load_success(mock_tomllib_load: MagicMock, tmp_path: Path):
+    # Given
+    mock_config_path = tmp_path / "./test_config.toml"
+    mock_config_path.touch()
     mock_config_data = {
         "remarkable-auto-ocr-app": {
             "google_api_key": "test_key",
@@ -22,14 +30,12 @@ def test_config_load_success(mock_tomllib_load):
             "ssh_key_path": "test_path",
         }
     }
-
-    # Set the return value of the mocked tomllib.load function
     mock_tomllib_load.return_value = mock_config_data
 
-    # Call the load method with the mock path
+    # When
     config = _Config.load(path_override=mock_config_path)
 
-    # Assert that the config values are loaded correctly
+    # Then
     assert config.google_api_key == "test_key"
     assert config.remarkable_ip_address == "test_ip"
     assert config.ssh_key_path == "test_path"
@@ -40,30 +46,37 @@ def test_config_load_success(mock_tomllib_load):
 @patch("tomllib.load")
 def test_config_load_failure(mock_tomllib_load):
     mock_tomllib_load.side_effect = FileNotFoundError
-    with pytest.raises(ConfigLoadError):
+    with pytest.raises(FileNotFoundError):
         _Config.load()
 
 
 @patch("tomllib.load")
 def test_config_load_toml_decode_error(mock_tomllib_load):
     mock_tomllib_load.side_effect = tomllib.TOMLDecodeError("Invalid TOML")
-    with pytest.raises(ConfigLoadError):
+    with pytest.raises(tomllib.TOMLDecodeError):
         _Config.load()
 
 
 @patch("tomllib.load")
+def test_config_reload_wraps_error(
+    mock_tomllib_load: MagicMock, default_config: _Config
+):
+    mock_tomllib_load.side_effect = tomllib.TOMLDecodeError("Invalid TOML")
+    with pytest.raises(ConfigLoadError):
+        default_config.reload()
+
+
+@patch("tomllib.load")
 def test_config_reload_success(mock_tomllib_load):
-    # setup a config object first, so we can validate it's updated
-    _Config.default_prompt = "test_prompt"
+    # Given
     config = _Config(
         google_api_key="test_key",
         remarkable_ip_address="test_ip",
         ssh_key_path="test_path",
     )
     config.default_prompt = "test_prompt"
-
-    # Create a mock config file path
     mock_config_path = Path("./test_config.toml")
+    mock_config_path.touch()
 
     # Create mock config data
     mock_config_data = {

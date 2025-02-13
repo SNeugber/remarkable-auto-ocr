@@ -2,8 +2,8 @@
 from pathlib import Path
 from unittest.mock import patch
 
-from src.rao import file_sync
-from src.rao.models import RemarkableFile, RemarkablePage
+from rao import file_sync
+from rao.models import RemarkableFile, RemarkablePage
 
 
 def test__combine_md_pages():
@@ -32,7 +32,7 @@ def test__combine_md_pages():
 # Mock pathname2url for consistent testing across systems
 @patch("os.path.exists", return_value=True)  # mock the directory and files
 @patch(
-    "src.rao.file_sync.pathname2url", return_value="/test/path/file.md"
+    "rao.file_sync.pathname2url", return_value="/test/path/file.md"
 )  # Mock os.path.relpath
 def test__dir_to_md_tree(mock_url, mock_exists):
     root_path = Path("./test_dir")
