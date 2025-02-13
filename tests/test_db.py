@@ -1,3 +1,7 @@
+from datetime import datetime, timedelta
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
@@ -6,10 +10,20 @@ from rao.file_processing_config import ProcessingConfig
 from rao.models import Base, Metadata, RemarkableFile
 
 
-def test_get_engine():
+@patch("rao.db.Base")
+@patch("rao.db.Config")
+def test_get_engine(mock_config: MagicMock, mock_base: MagicMock, tmp_path: Path):
+    # Given
+    db_dir = tmp_path / "db_dir"
+    db_dir.mkdir()
+    mock_config.db_data_dir = db_dir
+
+    # When
     engine = db.get_engine()
-    assert engine.url.database == "data/db.sqlite"
-    Base.metadata.drop_all(engine)  # Cleanup
+
+    # Then
+    assert engine.url.database == str(tmp_path / "db_dir/db.sqlite")
+    mock_base.metadata.create_all.assert_called_once_with(engine)
 
 
 def test_out_of_sync_files():
@@ -18,15 +32,33 @@ def test_out_of_sync_files():
     Base.metadata.create_all(engine)
     session = Session(bind=engine)
 
-    file1 = RemarkableFile(uuid="uuid1", last_modified=1000)
-    file2 = RemarkableFile(uuid="uuid2", last_modified=2000)
+    file1 = RemarkableFile(
+        uuid="uuid1",
+        name="file1",
+        last_modified=datetime.now(),
+        type="a",
+        parent_uuid=None,
+        path=Path("file1"),
+        other_files=[],
+    )
+    file2 = RemarkableFile(
+        uuid="uuid2",
+        name="file2",
+        last_modified=datetime.now(),
+        type="a",
+        parent_uuid=None,
+        path=Path("file2"),
+        other_files=[],
+    )
 
-    config1 = ProcessingConfig(force_reprocess=False, prompt_hash=123)
-    config2 = ProcessingConfig(force_reprocess=True, prompt_hash=456)
+    config1 = ProcessingConfig(pdf_only=True, force_reprocess=False, prompt=None)
+    config2 = ProcessingConfig(pdf_only=True, force_reprocess=True, prompt=None)
 
     file_configs = {file1: config1, file2: config2}
 
-    meta1 = Metadata(uuid="uuid1", last_modified=500, prompt_hash=123)
+    meta1 = Metadata(
+        uuid="uuid1", last_modified=datetime.now() - timedelta(days=1), prompt_hash=123
+    )
     session.add(meta1)
     session.commit()
 
