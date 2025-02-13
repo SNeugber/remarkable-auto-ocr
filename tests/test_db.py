@@ -1,10 +1,9 @@
-# tests/test_db.py
-
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from rao import db
-from rao.models import Base, Metadata, ProcessingConfig, RemarkableFile
+from rao.file_processing_config import ProcessingConfig
+from rao.models import Base, Metadata, RemarkableFile
 
 
 def test_get_engine():

@@ -16,9 +16,9 @@ class ConfigLoadError(Exception):
 
 @dataclass()
 class _Config:
-    google_api_key: str
-    remarkable_ip_address: str
-    ssh_key_path: str
+    google_api_key: str = ""
+    remarkable_ip_address: str = ""
+    ssh_key_path: str = ""
     check_interval: Seconds = 120
     whitelist_path: str | None = None
     blacklist_path: str | None = None
@@ -32,7 +32,7 @@ class _Config:
     render_path: str = "./data/renders"
 
     @classmethod
-    def load(cls, path_override: Path | None = None):
+    def _load(cls, path_override: Path | None = None):
         for path in (
             [
                 Path.home() / "config.toml",
@@ -45,12 +45,12 @@ class _Config:
                 continue
             logger.info(f"Loading config from {path}")
             data = tomllib.load(path.open("rb"))
-            return _Config(**data["remarkable-auto-ocr-app"])
+            return cls(**data["remarkable-auto-ocr-app"])
         raise FileNotFoundError("Unable to find a config file, aborting")
 
     def reload(self, path_override: Path | None = None):
         try:
-            new = self.load(path_override)
+            new = self._load(path_override)
         except tomllib.TOMLDecodeError as e:
             logger.error(f"Unable to load toml file: {e}")
             raise ConfigLoadError from e
@@ -61,4 +61,4 @@ class _Config:
             setattr(self, key, value)
 
 
-Config = _Config.load()  # Not catching, must succeed on startup!
+Config = _Config()

@@ -2,7 +2,8 @@
 from unittest.mock import MagicMock, patch
 
 from rao import doc_parsing
-from rao.models import ProcessingConfig, RemarkableFile, RemarkablePage
+from rao.file_processing_config import ProcessingConfig
+from rao.models import RemarkableFile, RemarkablePage
 
 
 @patch("rao.doc_parsing.genai")

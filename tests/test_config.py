@@ -8,15 +8,6 @@ import tomllib
 from rao.config import ConfigLoadError, _Config
 
 
-@pytest.fixture
-def default_config() -> _Config:
-    return _Config(
-        google_api_key="test_key",
-        remarkable_ip_address="test_ip",
-        ssh_key_path="test_path",
-    )
-
-
 # Mock the tomllib.load function
 @patch("tomllib.load")
 def test_config_load_success(mock_tomllib_load: MagicMock, tmp_path: Path):
@@ -33,7 +24,8 @@ def test_config_load_success(mock_tomllib_load: MagicMock, tmp_path: Path):
     mock_tomllib_load.return_value = mock_config_data
 
     # When
-    config = _Config.load(path_override=mock_config_path)
+    config = _Config()
+    config.reload(path_override=mock_config_path)
 
     # Then
     assert config.google_api_key == "test_key"
@@ -46,24 +38,15 @@ def test_config_load_success(mock_tomllib_load: MagicMock, tmp_path: Path):
 @patch("tomllib.load")
 def test_config_load_failure(mock_tomllib_load):
     mock_tomllib_load.side_effect = FileNotFoundError
-    with pytest.raises(FileNotFoundError):
-        _Config.load()
+    with pytest.raises(ConfigLoadError):
+        _Config().reload()
 
 
 @patch("tomllib.load")
 def test_config_load_toml_decode_error(mock_tomllib_load):
     mock_tomllib_load.side_effect = tomllib.TOMLDecodeError("Invalid TOML")
-    with pytest.raises(tomllib.TOMLDecodeError):
-        _Config.load()
-
-
-@patch("tomllib.load")
-def test_config_reload_wraps_error(
-    mock_tomllib_load: MagicMock, default_config: _Config
-):
-    mock_tomllib_load.side_effect = tomllib.TOMLDecodeError("Invalid TOML")
     with pytest.raises(ConfigLoadError):
-        default_config.reload()
+        _Config().reload()
 
 
 @patch("tomllib.load")

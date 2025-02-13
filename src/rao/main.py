@@ -15,7 +15,7 @@ from rao.config import Config
 
 def run(config_path: Path | None):
     logger.info("Service is running...")
-
+    Config.reload(config_path)  # Must succeed on startup
     engine = db.get_engine()
     check_interval = 0
     while True:

@@ -14,7 +14,8 @@
         "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
             "source.fixAll": "explicit",
-        }
+        },
+        "editor.defaultFormatter": "charliermarsh.ruff",
     },
     "python.analysis.autoFormatStrings": true,
     "ruff.organizeImports": true,
@@ -23,10 +24,10 @@
     "editor.defaultFormatter": "charliermarsh.ruff",
     "python.analysis.typeCheckingMode": "off",
     "ruff.interpreter": [
-        ".venv/bin/python"
+        "${workspaceFolder}/.venv/bin/python"
     ],
     "ruff.path": [
-        ".venv/bin/ruff"
+        "${workspaceFolder}/.venv/bin/ruff"
     ],
     "python.testing.pytestArgs": [
         "tests"
