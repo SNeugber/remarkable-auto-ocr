@@ -8,6 +8,7 @@ from loguru import logger
 Seconds: TypeAlias = int
 
 _DEFAULT_PROMPT = """Render this document as rmarkdown and ensure that tables are rendered as such where required."""
+TMP_DB_DIR = Path("/tmp/rao_db/")
 
 
 class ConfigLoadError(Exception):

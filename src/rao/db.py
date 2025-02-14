@@ -1,20 +1,17 @@
 from collections.abc import Iterable
-from pathlib import Path
 
 from loguru import logger
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
 
-from .config import Config
+from .config import TMP_DB_DIR
 from .file_processing_config import ProcessingConfig
 from .models import Base, Metadata, Page, RemarkableFile, RemarkablePage
 
 
 def get_engine() -> Engine:
-    db_dir = Path(Config.db_data_dir if Config.db_data_dir else "./data/")
-    db_dir.mkdir(exist_ok=True)
-    engine = create_engine(f"sqlite:///{db_dir}/db.sqlite", echo=True)
+    engine = create_engine(f"sqlite:///{TMP_DB_DIR}/db.sqlite", echo=True)
     Base.metadata.create_all(engine)
     return engine
 

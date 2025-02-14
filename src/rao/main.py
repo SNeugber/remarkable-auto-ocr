@@ -16,6 +16,7 @@ from rao.config import Config
 def run(config_path: Path | None):
     logger.info("Service is running...")
     Config.reload(config_path)  # Must succeed on startup
+    fs.load_db_file_from_backup()
     engine = db.get_engine()
     check_interval = 0
     while True:
@@ -52,6 +53,7 @@ def run_once(engine: Engine, config_path: Path | None):
         if not any([p in failed for p in pages])
     }
     db.mark_as_synced(saved, file_configs, engine)
+    fs.save_db_file_to_backup()
 
 
 @click.command()
