@@ -15,6 +15,15 @@ wheels = [
 ]
 
 [[package]]
+name = "backoff"
+version = "2.2.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/47/d7/5bbeb12c44d7c4f2fb5b56abce497eb5ed9f34d85701de869acedd602619/backoff-2.2.1.tar.gz", hash = "sha256:03f829f5bb1923180821643f8753b0502c3b682293992485b0eef2807afa5cba", size = 17001 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/df/73/b6e24bd22e6720ca8ee9a85a0c4a2971af8497d8f3193fa05390cbd46e09/backoff-2.2.1-py3-none-any.whl", hash = "sha256:63579f9a0628e06278f7e47b7d7d5b6ce20dc65c5e96a6f3ca99a6adca0396e8", size = 15148 },
+]
+
+[[package]]
 name = "bcrypt"
 version = "4.2.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1044,10 +1053,17 @@ wheels = [
 ]
 
 [[package]]
+name = "ratelimit"
+version = "2.2.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/ab/38/ff60c8fc9e002d50d48822cc5095deb8ebbc5f91a6b8fdd9731c87a147c9/ratelimit-2.2.1.tar.gz", hash = "sha256:af8a9b64b821529aca09ebaf6d8d279100d766f19e90b5059ac6a718ca6dee42", size = 5251 }
+
+[[package]]
 name = "remarkable-auto-ocr"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "backoff" },
     { name = "click" },
     { name = "google-genai" },
     { name = "google-generativeai" },
@@ -1055,11 +1071,13 @@ dependencies = [
     { name = "pandas" },
     { name = "paramiko" },
     { name = "pypdf" },
+    { name = "ratelimit" },
     { name = "remarks" },
     { name = "rmrl" },
     { name = "setuptools" },
     { name = "shapely" },
     { name = "sqlalchemy" },
+    { name = "tqdm" },
 ]
 
 [package.dev-dependencies]
@@ -1076,6 +1094,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "backoff", specifier = ">=2.2.1" },
     { name = "click", specifier = ">=8.1.8" },
     { name = "google-genai", specifier = ">=0.6.0" },
     { name = "google-generativeai", specifier = ">=0.8.4" },
@@ -1083,11 +1102,13 @@ requires-dist = [
     { name = "pandas", specifier = ">=2.2.3" },
     { name = "paramiko", specifier = ">=3.5.0" },
     { name = "pypdf", specifier = ">=5.2.0" },
+    { name = "ratelimit", specifier = ">=2.2.1" },
     { name = "remarks", git = "https://github.com/SNeugber/remarks?rev=a757d7e79ef4118ee92033f5087a53b682e1c96c" },
     { name = "rmrl", specifier = ">=0.2.1" },
     { name = "setuptools", specifier = ">=75.8.0" },
     { name = "shapely", specifier = ">=2.0.7" },
     { name = "sqlalchemy", specifier = ">=2.0.37" },
+    { name = "tqdm", specifier = ">=4.67.1" },
 ]
 
 [package.metadata.requires-dev]

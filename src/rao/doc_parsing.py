@@ -1,9 +1,12 @@
-import time
-
+import google.api_core.exceptions as google_exceptions
+from backoff import expo, on_exception
 from google import genai
+from google.genai import errors as genai_errors
 from google.genai import types
 from loguru import logger
 from pydantic import BaseModel
+from ratelimit import limits, sleep_and_retry
+from tqdm import tqdm
 
 from .config import Config
 from .file_processing_config import ProcessingConfig
@@ -17,10 +20,9 @@ class MDContentSchema(BaseModel):
 def pages_to_md(
     pages: list[RemarkablePage], file_configs: dict[RemarkableFile, ProcessingConfig]
 ) -> tuple[dict[RemarkablePage, str], set[RemarkablePage]]:
-    logger.info(f"Converting {len(pages)} to markdown")
     rendered = {}
     failed: set[RemarkablePage] = set()
-    for page in pages:
+    for page in tqdm(pages, f"Converting {len(pages)} to markdown"):
         if file_configs[page.parent].pdf_only:
             continue
         md = _pdf2md(page.pdf_data, prompt=file_configs[page.parent].prompt)
@@ -38,6 +40,29 @@ def pages_to_md(
     return rendered, failed
 
 
+@sleep_and_retry
+@on_exception(expo, google_exceptions.ResourceExhausted, max_tries=3)
+@limits(calls=60, period=60)
+def _call_api_rate_limited(
+    client: genai.Client, model_name: str, prompt: str, pdf_data: bytes
+):
+    try:
+        response = client.models.generate_content(
+            model=model_name,
+            contents=[prompt, types.Part.from_bytes(pdf_data, "application/pdf")],
+            config={
+                "response_mime_type": "application/json",
+                "response_schema": MDContentSchema,
+            },
+        )
+        mdcontent: MDContentSchema = response.parsed
+        return mdcontent.markdown
+    except genai_errors.ClientError as e:
+        if e.code == 429 or e.status == "RESOURCE_EXHAUSTED":
+            raise google_exceptions.ResourceExhausted(e.message) from e
+        raise e
+
+
 def _pdf2md(pdf_data: bytes, prompt: str) -> str:
     # genai.configure(api_key=Config.google_api_key)
     client = genai.Client(api_key=Config.google_api_key)
@@ -46,22 +71,11 @@ def _pdf2md(pdf_data: bytes, prompt: str) -> str:
     for model_name in [Config.model, Config.backup_model]:
         # model = genai.GenerativeModel(model_name)
         try:
-            response = client.models.generate_content(
-                model=model_name,
-                contents=[prompt, types.Part.from_bytes(pdf_data, "application/pdf")],
-                config={
-                    "response_mime_type": "application/json",
-                    "response_schema": MDContentSchema,
-                },
-            )
-            mdcontent: MDContentSchema = response.parsed
-            return mdcontent.markdown
+            return _call_api_rate_limited(client, model_name, prompt, pdf_data)
         except Exception as e:
             logger.warning(
-                f"Failed to get response using model {model_name}. Trying backup..."
+                f"Failed to get response using model {model_name}.\n{e}\n Trying backup..."
             )
             exception = e
-        finally:
-            time.sleep(0.5)  # TODO: Better rate limiting...
     logger.error(f"Failed to convert PDF to markdown.\n{exception}")
     return None
