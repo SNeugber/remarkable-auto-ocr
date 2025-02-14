@@ -1,3 +1,5 @@
+import time
+
 from google import genai
 from google.genai import types
 from loguru import logger
@@ -59,5 +61,7 @@ def _pdf2md(pdf_data: bytes, prompt: str) -> str:
                 f"Failed to get response using model {model_name}. Trying backup..."
             )
             exception = e
+        finally:
+            time.sleep(0.5)  # TODO: Better rate limiting...
     logger.error(f"Failed to convert PDF to markdown.\n{exception}")
     return None
