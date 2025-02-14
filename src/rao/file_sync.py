@@ -9,7 +9,7 @@ from urllib.request import pathname2url
 from loguru import logger
 from pypdf import PdfWriter
 
-from .config import TMP_DB_DIR, Config
+from .config import DB_CACHE_PATH, Config
 from .models import RemarkableFile, RemarkablePage
 
 PAGE_SEPARATOR = re.compile(r"^## Page \d+ - \[[0-9a-f\-]+\]$")
@@ -228,16 +228,16 @@ def load_db_file_from_backup():
     if not Config.db_data_dir:
         return
     logger.info("Loading DB files ...")
-    db_path = Path(Config.db_data_dir)
+    db_path = Path(Config.db_data_dir) / DB_CACHE_PATH.name
     if not db_path.exists():
         raise FileNotFoundError("DB backup does not exist!")
-    shutil.copytree(db_path, TMP_DB_DIR)
+    subprocess.check_call(["cp", str(db_path), str(DB_CACHE_PATH)])
 
 
 def save_db_file_to_backup():
     if not Config.db_data_dir:
         return
     logger.info("Saving DB files ...")
-    db_path = Path(Config.db_data_dir)
-    db_path.mkdir(exist_ok=True, parents=True)
-    shutil.copytree(TMP_DB_DIR, db_path, dirs_exist_ok=True)
+    db_path = Path(Config.db_data_dir) / DB_CACHE_PATH.name
+    db_path.parent.mkdir(exist_ok=True, parents=True)
+    subprocess.check_call(["cp", str(DB_CACHE_PATH), str(db_path)])

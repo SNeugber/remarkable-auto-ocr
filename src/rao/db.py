@@ -5,13 +5,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
 
-from .config import TMP_DB_DIR
+from .config import DB_CACHE_PATH
 from .file_processing_config import ProcessingConfig
 from .models import Base, Metadata, Page, RemarkableFile, RemarkablePage
 
 
 def get_engine() -> Engine:
-    engine = create_engine(f"sqlite:///{TMP_DB_DIR}/db.sqlite", echo=True)
+    engine = create_engine(f"sqlite:///{DB_CACHE_PATH}", echo=True)
     Base.metadata.create_all(engine)
     return engine
 
