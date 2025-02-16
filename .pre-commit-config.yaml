@@ -14,3 +14,7 @@ repos:
       - id: mdformat
         additional_dependencies:
           [mdformat-gfm, mdformat-black, mdformat-toc, mdformat-footnote]
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: ''  # Use the sha / tag you want to point at
+    hooks:
+      - id: mypy
