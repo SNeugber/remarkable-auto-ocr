@@ -247,7 +247,6 @@ to make certain apt packages mandatory during installation and limit the app to 
 ## TODO
 
 1. Tests & Code Cleanup
-1. Better "data" folder, perhaps create a docker volume for this, or let user mount a specific folder.
 1. Pass in scaling factor to `remarks.process_document` to scale templates to paper pro dimensions
 
 # Acknowledgements
