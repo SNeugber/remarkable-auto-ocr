@@ -1,5 +1,5 @@
 # tests/test_doc_parsing.py
-from unittest.mock import MagicMock, patch
+from unittest.mock import ANY, MagicMock, patch
 
 from rao import doc_parsing
 from rao.file_processing_config import ProcessingConfig
@@ -13,19 +13,22 @@ def test__pdf2md(mock_genai):
     mock_config.model = "test_model"
     mock_config.backup_model = "backup_model"
     doc_parsing.Config = mock_config
-    mock_response = MagicMock()
-    mock_response.text = "test_markdown"
-    mock_genai.GenerativeModel.return_value.generate_content.return_value = (
-        mock_response
-    )
+    mock_genai.Client.return_value.models.generate_content.return_value.parsed.markdown = "test_markdown"
     pdf_data = b"test_pdf_data"
     prompt = "test_prompt"
 
     md = doc_parsing._pdf2md(pdf_data, prompt)
 
     assert md == "test_markdown"
-    mock_genai.configure.assert_called_once_with(api_key="test_key")
-    mock_genai.GenerativeModel.assert_called_with("test_model")
+    mock_genai.Client.assert_called_once_with(api_key="test_key")
+    mock_genai.Client.return_value.models.generate_content.assert_called_with(
+        model="test_model",
+        contents=ANY,
+        config={
+            "response_mime_type": "application/json",
+            "response_schema": ANY,
+        },
+    )
 
 
 @patch("rao.doc_parsing.genai")
@@ -37,10 +40,9 @@ def test__pdf2md_backup_model(mock_genai):
     doc_parsing.Config = mock_config
 
     mock_response = MagicMock()
-    mock_response.text = "test_markdown"
+    mock_response.parsed.markdown = "test_markdown"
 
-    # first call raises exception
-    mock_genai.GenerativeModel.return_value.generate_content.side_effect = [
+    mock_genai.Client.return_value.models.generate_content.side_effect = [
         Exception("Boom!"),
         mock_response,
     ]
@@ -50,10 +52,17 @@ def test__pdf2md_backup_model(mock_genai):
     md = doc_parsing._pdf2md(pdf_data, prompt)
 
     assert md == "test_markdown"
-    mock_genai.configure.assert_called_once_with(api_key="test_key")
-    assert mock_genai.GenerativeModel.call_count == 2
-    mock_genai.GenerativeModel.assert_any_call("test_model")
-    mock_genai.GenerativeModel.assert_called_with("backup_model")
+    assert mock_genai.Client.return_value.models.generate_content.call_count == 2
+    mock_genai.Client.return_value.models.generate_content.assert_any_call(
+        model="test_model",
+        contents=ANY,
+        config=ANY,
+    )
+    mock_genai.Client.return_value.models.generate_content.assert_any_call(
+        model="backup_model",
+        contents=ANY,
+        config=ANY,
+    )
 
 
 @patch("rao.doc_parsing.genai")

@@ -64,12 +64,9 @@ def _call_api_rate_limited(
 
 
 def _pdf2md(pdf_data: bytes, prompt: str) -> str:
-    # genai.configure(api_key=Config.google_api_key)
     client = genai.Client(api_key=Config.google_api_key)
-
     exception = None
     for model_name in [Config.model, Config.backup_model]:
-        # model = genai.GenerativeModel(model_name)
         try:
             return _call_api_rate_limited(client, model_name, prompt, pdf_data)
         except Exception as e:
