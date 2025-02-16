@@ -3,45 +3,12 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from rao import db
 from rao.file_processing_config import ProcessingConfig
-from rao.models import Base, Metadata, RemarkableFile
-
-
-@pytest.fixture
-def files_and_configs():
-    def build(n: int):
-        files = [
-            RemarkableFile(
-                uuid=f"uuid{i}",
-                name=f"file{i}",
-                last_modified=datetime.now(),
-                type="document",
-                parent_uuid=None,
-                path=Path(f"file{i}"),
-                other_files=[],
-            )
-            for i in range(n)
-        ]
-        configs = [
-            ProcessingConfig(pdf_only=False, force_reprocess=False, prompt=f"{i}")
-            for i in range(n)
-        ]
-        meta_data = [
-            Metadata(
-                uuid=files[i].uuid,
-                last_modified=files[i].last_modified,
-                prompt_hash=configs[i].prompt_hash,
-            )
-            for i in range(n)
-        ]
-        return (files, configs, meta_data)
-
-    return build
+from rao.models import Base, RemarkableFile
 
 
 @patch("rao.db.Base")

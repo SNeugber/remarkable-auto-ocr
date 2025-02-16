@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 import pandas as pd
 
-import rao
+from rao import remarkable
 
 
 def test__load_metadata_files():
@@ -21,7 +21,7 @@ def test__load_metadata_files():
     }
     df = pd.DataFrame(data)
 
-    files = rao.remarkable._load_metadata_files(mock_sftp, df)
+    files = remarkable._load_metadata_files(mock_sftp, df)
 
     assert len(files) == 2
     assert files[0].name == "test_file"

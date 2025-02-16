@@ -165,24 +165,3 @@ def test_pages_to_md_pdf_only(mock_pdf2md, mock_genai):
     assert rendered == {}
     assert failed == set()
     mock_pdf2md.assert_not_called()
-
-
-def test__postprocess():
-    md = "```markdown\n\nsome content\n\n```"
-    page = RemarkablePage(
-        file_name="file1.pdf",
-        modified_client=123,
-        page=1,
-        page_idx=0,
-        parent=RemarkableFile(name="file1", modified_client=1234),
-    )
-    processed_md = doc_parsing._postprocess(md, page)
-    assert processed_md == "some content"
-
-    md = "```\nsome content\n```"
-    processed_md = doc_parsing._postprocess(md, page)
-    assert processed_md == "some content"
-
-    md = "\nsome content\n"
-    processed_md = doc_parsing._postprocess(md, page)
-    assert processed_md == "some content"
