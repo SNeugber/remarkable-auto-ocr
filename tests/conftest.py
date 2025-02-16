@@ -33,9 +33,9 @@ def default_config(tmpdir_factory: Path) -> Any:
 
 
 @pytest.fixture
-def files_and_configs():
+def files():
     def build(n: int):
-        files = [
+        return [
             RemarkableFile(
                 uuid=f"uuid{i}",
                 name=f"file{i}",
@@ -47,18 +47,26 @@ def files_and_configs():
             )
             for i in range(n)
         ]
+
+    return build
+
+
+@pytest.fixture
+def files_and_configs(files):
+    def build(n: int):
+        _files = files(n)
         configs = [
             ProcessingConfig(pdf_only=False, force_reprocess=False, prompt=f"{i}")
             for i in range(n)
         ]
         meta_data = [
             Metadata(
-                uuid=files[i].uuid,
-                last_modified=files[i].last_modified,
+                uuid=_files[i].uuid,
+                last_modified=_files[i].last_modified,
                 prompt_hash=configs[i].prompt_hash,
             )
             for i in range(n)
         ]
-        return (files, configs, meta_data)
+        return (_files, configs, meta_data)
 
     return build
