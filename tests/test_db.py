@@ -45,18 +45,20 @@ def files_and_configs():
 
 
 @patch("rao.db.Base")
-@patch("rao.db.Config")
-def test_get_engine(mock_config: MagicMock, mock_base: MagicMock, tmp_path: Path):
+@patch("rao.db.DB_CACHE_PATH")
+def test_get_engine(
+    mock_db_cache_path: MagicMock, mock_base: MagicMock, tmp_path: Path
+):
     # Given
     db_dir = tmp_path / "db_dir"
     db_dir.mkdir()
-    mock_config.db_data_dir = db_dir
+    mock_db_cache_path.__str__.return_value = str(db_dir / "db.sqlite")
 
     # When
     engine = db.get_engine()
 
     # Then
-    assert engine.url.database == str(tmp_path / "db_dir/db.sqlite")
+    assert engine.url.database == str(db_dir / "db.sqlite")
     mock_base.metadata.create_all.assert_called_once_with(engine)
 
 
