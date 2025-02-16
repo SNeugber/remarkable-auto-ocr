@@ -26,10 +26,10 @@
 			"ms-python.vscode-pylance",
 			"tomoki1207.pdf",
 			"alexcvzz.vscode-sqlite",
-			"ms-python.mypy-type-checker",
+			"ms-python.mypy-type-checker"
 		]
 		}
-	},
+	}
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
