@@ -13,9 +13,9 @@ from rao import file_sync as fs
 from rao.config import Config
 
 
-def run(config_path: Path | None):
+def run():
     logger.info("Service is running...")
-    Config.reload(config_path)  # Must succeed on startup
+    Config.reload()  # Must succeed on startup
     fs.load_db_file_from_backup()
     engine = db.get_engine()
     check_interval = 0
@@ -23,7 +23,7 @@ def run(config_path: Path | None):
         time.sleep(check_interval)
         check_interval = Config.check_interval
         try:
-            run_once(engine, config_path)
+            run_once(engine)
         except Exception:
             logger.error(
                 f"Failure during sync, trying again in {check_interval} seconds..."
@@ -31,8 +31,8 @@ def run(config_path: Path | None):
 
 
 @logger.catch(reraise=True)
-def run_once(engine: Engine, config_path: Path | None):
-    Config.reload(config_path)
+def run_once(engine: Engine):
+    Config.reload()
     with remarkable.connect() as session:
         if session is None:
             return
@@ -57,13 +57,10 @@ def run_once(engine: Engine, config_path: Path | None):
 
 
 @click.command()
-@click.option("--config", type=click.Path(), default=None, help="Path to config file")
-@click.option("--log_dir", type=click.Path(), default=None, help="Path to logs")
-def main(config: Path | None, log_dir: Path | None):
-    if log_dir is None:
-        log_dir = Path("./logs")
+def main():
+    log_dir = Path("/data/logs")
     logger.add(log_dir / "debug.log", level="INFO")
-    run(config_path=config)
+    run()
 
 
 if __name__ == "__main__":

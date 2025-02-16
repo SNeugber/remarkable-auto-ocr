@@ -8,6 +8,7 @@ services:
     volumes:
       - ..:/workspaces:cached
       - ${HOME}/.ssh:/root/.ssh
+      - ./data:/data
       - gdrive:/data/gdrive
 
 volumes:

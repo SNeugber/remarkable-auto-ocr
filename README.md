@@ -24,11 +24,12 @@ This is a utility service intended to automatically sync and convert handwritten
 - [Which Files To Process](#which-files-to-process)
   - [whitelist.csv](#whitelistcsv)
   - [blacklist.csv](#blacklistcsv)
-- [Custom Prompts](#custom-prompts)
-  - [example_prompt.txt](#example_prompttxt)
+  - [Custom Prompts](#custom-prompts)
 - [Saving Data to External Resources](#saving-data-to-external-resources)
   - [`md_repo_path`](#md_repo_path)
   - [`pdf_copy_path`](#pdf_copy_path)
+  - [Ubuntu Google Drive Integration](#ubuntu-google-drive-integration)
+  - [Windows Google Drive Integration](#windows-google-drive-integration)
 - [Known Issues](#known-issues)
   - [Rotated PDFs](#rotated-pdfs)
   - [Finding the tablet IP automatically](#finding-the-tablet-ip-automatically)
@@ -40,15 +41,18 @@ This is a utility service intended to automatically sync and convert handwritten
 
 1. [Install Docker](https://docs.docker.com/engine/install/)
 1. Set up your tablet for [ssh key authentication](https://remarkable.guide/guide/access/ssh.html).
-1. Create a whitelist, blacklist, and custom prompts: [Which Files to Process](#which-files-to-process)
 1. Create a Google AI Studio API key: [Google AI Studio](https://aistudio.google.com/apikey)
-1. Create a file `config.toml` (default: in the project root directory): [Config](#config)
+1. Create a `data` directory containing:
+   1. A whitelist, blacklist, and custom prompts: [Which Files to Process](#which-files-to-process)
+   1. A `config.toml` file: [Config](#config)
 1. Set up a repository & google drive directory to save the data to:
    [Saving Data to External Resources](#saving-data-to-external-resources)
 1. Update [docker-compose.yml](./docker-compose.yml) to mount your paths:
-   - The `config.toml` file if not in the project dir
+   - The `data` directory at `/data`, containing the whitelist, blacklist, custom prompts, and `config.toml` (by default
+     set to `./data`)
    - The path to the repo to save markdown files to
    - The docker volume for the google drive integration
+1. Ensure the paths in the `config.toml` match the mounted paths!
 1. Start the service: `docker compose up --build rao`
 
 ## Dev Setup
@@ -82,12 +86,13 @@ remarkable_ip_address = "192.168.1.xxx"   # TBD: fetch this automatically
 ssh_key_path = "/root/.ssh/id_rsa"        # for example
 check_interval = 120                      # how often to check for files to sync
 google_api_key = "your google api key"    # see below
-whitelist_path = "./data/whitelist.csv"   # see below
-blacklist_path = "./data/blacklist.csv"   # see below
+whitelist_path = "/data/whitelist.csv"    # see below
+blacklist_path = "/data/blacklist.csv"    # see below
+render_path = "/data/renders"             # where to save rendered pdf/md files to, before copying them elsewhere
 md_repo_path = ""                         # see below
 pdf_copy_path = ""                        # see below
-prompts_dir = "./data/prompts"            # see below
-db_data_dir = "./data/"                   # see below
+prompts_dir = "/data/prompts"             # see below
+db_data_dir = "/data/"                    # see below
 model = "gemini-1.5-flash"                # the model to use for markdown conversion
 default_prompt = "Turn this document into markdown"
 ```
@@ -144,15 +149,14 @@ in an entire directory should be ignored.
 | A/B/F  |
 ```
 
-## Custom Prompts
+### Custom Prompts
 
 Custom prompts should be stored as text files relative to the `prompts_dir` set in the [config](#config).
 
-##### *example_prompt.txt*
+**example_prompt.txt**
 
 ```txt
 Render this document as a markdown table. Ensure that the table contains columns `A`, `B`, and `C`.
-Do not include any text other than the raw markdown in the output.
 ```
 
 ## Saving Data to External Resources
@@ -169,7 +173,11 @@ commit and push the files/changes.
 ### `pdf_copy_path`
 
 This path should be set to the directory where all generated pdfs should be copied to. This is used primarily for
-auto-syncing to e.g. google drive. For google drive integration on ubuntu, this path should be in the format described
+auto-syncing to e.g. google drive.
+
+### Ubuntu Google Drive Integration
+
+For integration with googe drive on ubuntu, the `pdf_copy_path` path should be in the format described
 [here](https://askubuntu.com/a/1336612), pointing at the directory where the google drive folder is mounted to.
 
 For example:
@@ -203,6 +211,27 @@ volumes:
          device: "/run/user/1000/gvfs/google-drive:host=gmail.com,user=samuel.neugber/"
 ```
 
+### Windows Google Drive Integration
+
+In `docker desktop`, ensure that the drive created by the google drive application is shared. Then you can mount it as a
+volume in `docker-compose.yml`, e.g. for drive letter `G:`:
+
+```yaml
+services:
+rao:
+   ...
+   volumes:
+      - gdrive:/data/gdrive
+
+volumes:
+   gdrive:
+      driver: local
+      driver_opts:
+         type: none
+         o: bind
+         device: "G:\\"
+```
+
 ## Known Issues
 
 ### Rotated PDFs
@@ -219,6 +248,7 @@ to make certain apt packages mandatory during installation and limit the app to 
 
 1. Tests & Code Cleanup
 1. Better "data" folder, perhaps create a docker volume for this, or let user mount a specific folder.
+1. Pass in scaling factor to `remarks.process_document` to scale templates to paper pro dimensions
 
 # Acknowledgements
 

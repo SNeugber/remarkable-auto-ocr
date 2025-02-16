@@ -7,9 +7,13 @@ services:
     entrypoint: rm-auto-ocr
     volumes:
       - ${HOME}/.ssh:/root/.ssh
-      - config.toml:/root/config.toml
-      - gdrive:/data/gdrive
+      - ./data:/data
+      # - gdrive:/data/gdrive
 
-volumes:
-  gdrive:
-    external: true
+# volumes:
+#   gdrive:
+#     driver: local
+#     driver_opts:
+#       type: none
+#       o: bind
+#       device: # set me to e.g. "/run/user/1000/gvfs/google-drive:host=host.com,user=my.user/"

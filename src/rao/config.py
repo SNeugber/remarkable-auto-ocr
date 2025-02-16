@@ -29,29 +29,19 @@ class _Config:
     default_prompt: str = _DEFAULT_PROMPT
     model: str = "gemini-1.5-pro"
     backup_model: str = "gemini-1.5-flash"
-    prompts_dir: str = "./data/prompts"
-    render_path: str = "./data/renders"
+    prompts_dir: str = "/data/prompts"
+    render_path: str = "/data/renders"
 
     @classmethod
-    def _load(cls, path_override: Path | None = None):
-        for path in (
-            [
-                Path.home() / "config.toml",
-                Path(__file__).parent.parent.parent / "config.toml",
-            ]
-            if path_override is None
-            else [path_override]
-        ):
-            if not path.exists():
-                continue
-            logger.info(f"Loading config from {path}")
-            data = tomllib.load(path.open("rb"))
-            return cls(**data["remarkable-auto-ocr-app"])
-        raise FileNotFoundError("Unable to find a config file, aborting")
+    def _load(cls):
+        path = Path("/data/config.toml")
+        logger.info(f"Loading config from {path}")
+        data = tomllib.load(path.open("rb"))
+        return cls(**data["remarkable-auto-ocr-app"])
 
-    def reload(self, path_override: Path | None = None):
+    def reload(self):
         try:
-            new = self._load(path_override)
+            new = self._load()
         except tomllib.TOMLDecodeError as e:
             logger.error(f"Unable to load toml file: {e}")
             raise ConfigLoadError from e

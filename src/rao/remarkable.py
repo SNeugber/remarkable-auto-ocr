@@ -24,7 +24,7 @@ TEMPLATES_ROOT = Path("/usr/share/remarkable/templates/")
 SVG_VIEWBOX_PATTERN = re.compile(
     r"^<svg .+ viewBox=\"([\-\d.]+) ([\-\d.]+) ([\-\d.]+) ([\-\d.]+)\">$"
 )
-TEMPLATE_CACHE_DIR = Path("./data/templates_cache")
+TEMPLATE_CACHE_DIR = Path("/data/templates_cache")
 RENDER_TEMPLATES = True
 
 
