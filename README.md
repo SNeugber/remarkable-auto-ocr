@@ -84,10 +84,11 @@ check_interval = 120                      # how often to check for files to sync
 google_api_key = "your google api key"    # see below
 whitelist_path = "./data/whitelist.csv"   # see below
 blacklist_path = "./data/blacklist.csv"   # see below
-git_repo_path = ""                        # see below
-gdrive_folder_path = ""                   # see below
+md_repo_path = ""                         # see below
+pdf_copy_path = ""                        # see below
 prompts_dir = "./data/prompts"            # see below
-model: str = "gemini-1.5-flash"           # the model to use for markdown conversion
+db_data_dir = "./data/"                   # see below
+model = "gemini-1.5-flash"                # the model to use for markdown conversion
 default_prompt = "Turn this document into markdown"
 ```
 

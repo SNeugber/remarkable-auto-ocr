@@ -231,6 +231,7 @@ def load_db_file_from_backup():
     db_path = Path(Config.db_data_dir) / DB_CACHE_PATH.name
     if not db_path.exists():
         raise FileNotFoundError("DB backup does not exist!")
+    DB_CACHE_PATH.parent.mkdir(exist_ok=True)
     subprocess.check_call(["cp", str(db_path), str(DB_CACHE_PATH)])
 
 
