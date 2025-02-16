@@ -9,6 +9,7 @@ Seconds: TypeAlias = int
 
 _DEFAULT_PROMPT = """Render this document as rmarkdown and ensure that tables are rendered as such where required."""
 DB_CACHE_PATH = Path("/tmp/rao_db/db.sqlite")
+CONFIG_PATH = Path("/data/config.toml")
 
 
 class ConfigLoadError(Exception):
@@ -34,9 +35,8 @@ class _Config:
 
     @classmethod
     def _load(cls):
-        path = Path("/data/config.toml")
-        logger.info(f"Loading config from {path}")
-        data = tomllib.load(path.open("rb"))
+        logger.info(f"Loading config from {CONFIG_PATH}")
+        data = tomllib.load(CONFIG_PATH.open("rb"))
         return cls(**data["remarkable-auto-ocr-app"])
 
     def reload(self):

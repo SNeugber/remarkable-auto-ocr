@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Any
+from unittest import mock
 
 import pytest
 import toml
@@ -19,7 +20,9 @@ def default_config(tmpdir_factory: Path) -> Any:
             },
             f,
         )
-    from rao.config import Config
 
-    Config.reload(config_path)
-    yield Config
+    with mock.patch("rao.config.CONFIG_PATH", new=config_path):
+        from rao.config import Config
+
+        Config.reload()
+        yield Config

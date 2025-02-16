@@ -25,7 +25,7 @@ def test_config_load_success(mock_tomllib_load: MagicMock, tmp_path: Path):
 
     # When
     config = _Config()
-    config.reload(path_override=mock_config_path)
+    config.reload()
 
     # Then
     assert config.google_api_key == "test_key"
@@ -75,7 +75,7 @@ def test_config_reload_success(mock_tomllib_load):
     mock_tomllib_load.return_value = mock_config_data
 
     # Call the reload method with the mock path
-    config.reload(path_override=mock_config_path)
+    config.reload()
 
     # Assert that the config values are loaded correctly
     assert config.google_api_key == "test_key"
