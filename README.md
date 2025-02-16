@@ -218,7 +218,7 @@ to make certain apt packages mandatory during installation and limit the app to 
 ## TODO
 
 1. Tests & Code Cleanup
-1. Find a better way to check if template can't be tiled
+1. Better "data" folder, perhaps create a docker volume for this, or let user mount a specific folder.
 
 # Acknowledgements
 

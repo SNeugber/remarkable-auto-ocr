@@ -1103,7 +1103,7 @@ requires-dist = [
     { name = "paramiko", specifier = ">=3.5.0" },
     { name = "pypdf", specifier = ">=5.2.0" },
     { name = "ratelimit", specifier = ">=2.2.1" },
-    { name = "remarks", git = "https://github.com/SNeugber/remarks?rev=a757d7e79ef4118ee92033f5087a53b682e1c96c" },
+    { name = "remarks", git = "https://github.com/SNeugber/remarks?rev=361c059fff7aab3f474cbaa23334aa495254eda0" },
     { name = "rmrl", specifier = ">=0.2.1" },
     { name = "setuptools", specifier = ">=75.8.0" },
     { name = "shapely", specifier = ">=2.0.7" },
@@ -1126,7 +1126,7 @@ dev = [
 [[package]]
 name = "remarks"
 version = "0.3.10"
-source = { git = "https://github.com/SNeugber/remarks?rev=a757d7e79ef4118ee92033f5087a53b682e1c96c#a757d7e79ef4118ee92033f5087a53b682e1c96c" }
+source = { git = "https://github.com/SNeugber/remarks?rev=361c059fff7aab3f474cbaa23334aa495254eda0#361c059fff7aab3f474cbaa23334aa495254eda0" }
 dependencies = [
     { name = "cairosvg" },
     { name = "numpy" },
