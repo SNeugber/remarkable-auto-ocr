@@ -26,8 +26,8 @@ def save(
     return saved_pdf_files
 
 
-def _split_md_into_pages(md: str) -> dict[int | None, list[str]]:
-    pages: dict[int | None, list[str]] = {}
+def _split_md_into_pages(md: str) -> dict[int, list[str]]:
+    pages: dict[int, list[str]] = {}
     current_page = None
     current_page_lines: list[str] = []
     for line in md.split("\n"):
@@ -35,14 +35,15 @@ def _split_md_into_pages(md: str) -> dict[int | None, list[str]]:
         if len(page_separators) > 1:
             raise ValueError("Multiple page separators found in line.")
         if len(page_separators) > 0:
-            pages[current_page] = current_page_lines
+            if current_page is not None:
+                pages[current_page] = current_page_lines
             page_sep = page_separators[0]
             page_num = int(page_sep.split(" - ")[0].split("## Page ")[1])
             current_page = page_num
             current_page_lines = []
         current_page_lines.append(line)
-    pages[current_page] = current_page_lines
-    del pages[None]  # Remove anything before the first page
+    if current_page is not None:
+        pages[current_page] = current_page_lines
     return pages
 
 
