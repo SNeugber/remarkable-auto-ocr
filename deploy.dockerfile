@@ -8,8 +8,8 @@ ENV PATH="/root/.local/bin/:$PATH"
 
 COPY pyproject.toml pyproject.toml
 COPY uv.lock uv.lock
-COPY README.md README.md
 COPY src/ src/
+RUN echo "Empty README for building in container" > README.md
 
 RUN uv build --wheel
 
