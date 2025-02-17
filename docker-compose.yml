@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: deploy.dockerfile
     image: rao-runner
-    entrypoint: entrypoint.sh
+    entrypoint: /root/.local/bin/entrypoint.sh
     volumes:
       - ~/.ssh:/root/.ssh
       - ./data:/data

@@ -53,7 +53,7 @@ This is a utility service intended to automatically sync and convert handwritten
    - The path to the repo to save markdown files to
    - The docker volume for the google drive integration
 1. Ensure the paths in the `config.toml` match the mounted paths!
-1. Start the service: `docker compose up --build rao`
+1. Start the service: `docker compose up --build -d rao`
 
 ## Dev Setup
 
