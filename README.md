@@ -50,8 +50,9 @@ This is a utility service intended to automatically sync and convert handwritten
 1. Update [docker-compose.yml](./docker-compose.yml) to mount your paths:
    - The `data` directory at `/data`, containing the whitelist, blacklist, custom prompts, and `config.toml` (by default
      set to `./data`)
-   - The path to the repo to save markdown files to
-   - The docker volume for the google drive integration
+   - The docker volume for the google drive integration (if applicable)
+   - The path to the repo to save markdown files to (if applicable)
+   - The path to your `.gitconfig` file, so that it can save markdown files in the repo (if applicable)
 1. Ensure the paths in the `config.toml` match the mounted paths!
 1. Start the service: `docker compose up --build -d rao`
 

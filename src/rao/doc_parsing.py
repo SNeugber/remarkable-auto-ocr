@@ -25,7 +25,13 @@ def pages_to_md(
     for page in tqdm(pages, f"Converting {len(pages)} to markdown"):
         if file_configs[page.parent].pdf_only:
             continue
-        md = _pdf2md(page.pdf_data, prompt=file_configs[page.parent].prompt)
+        prompt = file_configs[page.parent].prompt
+        if not prompt:
+            logger.warning(
+                f"Page {page.page_idx} for file {page.parent.name} has no prompt!"
+            )
+            continue
+        md = _pdf2md(page.pdf_data, prompt=prompt)
         if md:
             rendered[page] = md
         else:
@@ -63,7 +69,7 @@ def _call_api_rate_limited(
         raise e
 
 
-def _pdf2md(pdf_data: bytes, prompt: str) -> str:
+def _pdf2md(pdf_data: bytes, prompt: str) -> str | None:
     client = genai.Client(api_key=Config.google_api_key)
     exception = None
     for model_name in [Config.model, Config.backup_model]:
