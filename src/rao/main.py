@@ -54,6 +54,7 @@ def run_once(engine: Engine):
     }
     db.mark_as_synced(saved, file_configs, engine)
     fs.save_db_file_to_backup()
+    logger.info("Syncing complete")
 
 
 @click.command()

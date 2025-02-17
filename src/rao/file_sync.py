@@ -165,7 +165,9 @@ def _sync_with_subrepo():
     except subprocess.CalledProcessError as e:
         if e.stdout is not None and "nothing to commit" in e.stdout.decode("utf-8"):
             return
-        logger.error(f"Unable to sync files with with subrepo: {e}")
+        logger.error(
+            f"Unable to sync files with with subrepo: {e}. stdout={e.stdout}. stderr={e.stderr}"
+        )
 
 
 def _save_markdown_repo_readme_file():
