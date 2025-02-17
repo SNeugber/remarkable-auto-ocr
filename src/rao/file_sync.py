@@ -21,24 +21,22 @@ def save(
 ) -> dict[RemarkableFile, list[RemarkablePage]]:
     _save_mds_to_disk(rendered_pages)
     saved_pdf_files, saved_paths = _save_pdfs_to_disk(all_pages)
-    if Config.md_repo_path:
-        _sync_with_subrepo()
-    if Config.pdf_copy_path:
-        _copy_rendered_pdfs_to_external_folder(saved_paths)
+    _sync_with_subrepo()
+    _copy_rendered_pdfs_to_external_folder(saved_paths)
     return saved_pdf_files
 
 
-def _split_md_into_pages(md: str) -> dict[int, list[str]]:
-    pages = {}
+def _split_md_into_pages(md: str) -> dict[int | None, list[str]]:
+    pages: dict[int | None, list[str]] = {}
     current_page = None
-    current_page_lines = []
+    current_page_lines: list[str] = []
     for line in md.split("\n"):
-        page_sep = re.findall(PAGE_SEPARATOR, line)
-        if len(page_sep) > 1:
+        page_separators = re.findall(PAGE_SEPARATOR, line)
+        if len(page_separators) > 1:
             raise ValueError("Multiple page separators found in line.")
-        if len(page_sep) > 0:
+        if len(page_separators) > 0:
             pages[current_page] = current_page_lines
-            page_sep = page_sep[0]
+            page_sep = page_separators[0]
             page_num = int(page_sep.split(" - ")[0].split("## Page ")[1])
             current_page = page_num
             current_page_lines = []
@@ -73,7 +71,7 @@ def _combine_md_pages(
 
 def _save_mds_to_disk(
     md_files: dict[RemarkablePage, str],
-) -> dict[RemarkableFile, list[RemarkablePage]]:
+) -> dict[RemarkableFile, dict[RemarkablePage, str]]:
     base_dir = Path(Config.render_path) / "md"
     base_dir.mkdir(exist_ok=True, parents=True)
     saved = {}
@@ -137,6 +135,8 @@ def _save_combined_pdf(pdf_path: Path, pages: list[RemarkablePage]) -> None:
 
 
 def _sync_with_subrepo():
+    if not Config.md_repo_path:
+        return
     logger.info("Syncing markdown files with subrepo ...")
     base_dir = Path(Config.render_path) / "md"
     if not Path(Config.md_repo_path).exists():
@@ -215,6 +215,8 @@ def _dir_to_md_tree(root_path: Path, path: Path, prefix="  "):
 
 
 def _copy_rendered_pdfs_to_external_folder(paths: list[Path]):
+    if not Config.pdf_copy_path:
+        return
     logger.info("Copying PDFs to target directory ...")
     base_dir = Path(Config.render_path) / "pdf"
     if not Path(Config.pdf_copy_path).exists():
