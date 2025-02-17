@@ -75,6 +75,7 @@ def _save_mds_to_disk(
     md_files: dict[RemarkablePage, str],
 ) -> dict[RemarkableFile, list[RemarkablePage]]:
     base_dir = Path(Config.render_path) / "md"
+    base_dir.mkdir(exist_ok=True, parents=True)
     saved = {}
 
     pages_per_file: dict[RemarkableFile, dict[RemarkablePage, str]] = defaultdict(dict)
@@ -103,6 +104,7 @@ def _save_pdfs_to_disk(
     pages: list[RemarkablePage],
 ) -> tuple[dict[RemarkableFile, list[RemarkablePage]], list[Path]]:
     base_dir = Path(Config.render_path) / "pdf"
+    base_dir.mkdir(exist_ok=True, parents=True)
     saved = {}
     file_paths = []
 
