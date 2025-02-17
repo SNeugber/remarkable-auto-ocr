@@ -7,5 +7,10 @@
         "args": ["sync"],
         "type": "shell"
     },
+    {
+        "label": "ssh-add",
+        "command": "${workspaceFolder}/.vscode/ssh_add.sh",
+        "type": "shell"
+    },
 ]
 }

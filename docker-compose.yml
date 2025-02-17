@@ -4,16 +4,16 @@ services:
       context: .
       dockerfile: deploy.dockerfile
     image: rao-runner
-    entrypoint: rm-auto-ocr
+    entrypoint: entrypoint.sh
     volumes:
-      - ${HOME}/.ssh:/root/.ssh
+      - ~/.ssh:/root/.ssh
       - ./data:/data
-      # - gdrive:/data/gdrive
+      - gdrive:/data/gdrive
 
-# volumes:
-#   gdrive:
-#     driver: local
-#     driver_opts:
-#       type: none
-#       o: bind
-#       device: # set me to e.g. "/run/user/1000/gvfs/google-drive:host=host.com,user=my.user/"
+volumes:
+  gdrive:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: "G:\\"

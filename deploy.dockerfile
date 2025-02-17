@@ -17,4 +17,7 @@ FROM build
 
 RUN find dist/ -name *.whl -print0 | xargs -0 -n1 uv tool install
 
+COPY scripts/ssh_add.sh ssh_add.sh
+COPY scripts/entrypoint.sh entrypoint.sh
+
 
